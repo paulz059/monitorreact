@@ -637,65 +637,82 @@ function MonitorDashboard() {
                     <Line 
                       data={(canvas) => {
                         let ctx = canvas.getContext("2d");
-                        let gradientStroke = ctx.createLinearGradient(0, 320, 0, 40);
+                        let gradientStroke = ctx.createLinearGradient(0, 400, 0, 50);
                         gradientStroke.addColorStop(1, "rgba(0, 242, 196, 0.35)");
                         gradientStroke.addColorStop(0.4, "rgba(0, 242, 196, 0.05)");
                         gradientStroke.addColorStop(0, "rgba(0, 242, 196, 0)");
-                        
+
                         return {
                           labels: weightChartData.labels,
                           datasets: [{
                             ...weightChartData.datasets[0],
                             backgroundColor: gradientStroke,
                             borderColor: "#00f2c4",
-                            borderWidth: 3,
+                            borderWidth: 2.5,
                             pointBackgroundColor: "#ffffff",
                             pointBorderColor: "#00f2c4",
                             pointBorderWidth: 2,
                             pointHoverBackgroundColor: "#00f2c4",
                             pointHoverBorderColor: "#ffffff",
                             pointHoverBorderWidth: 2,
-                            pointRadius: 5,
+                            pointRadius: 4,
                             pointHoverRadius: 7,
                           }]
                         };
-                      }} 
+                      }}
                       options={{
                         maintainAspectRatio: false,
+                        layout: {
+                          padding: { top: 16, right: 20, bottom: 8, left: 8 }
+                        },
                         plugins: {
                           legend: { display: false },
                           tooltip: {
                             backgroundColor: "#1e1e2f",
                             titleColor: "#ffffff",
                             bodyColor: "#00f2c4",
-                            bodySpacing: 4,
-                            padding: 12,
+                            bodySpacing: 6,
+                            padding: 14,
                             cornerRadius: 8,
                             borderColor: "rgba(0, 242, 196, 0.3)",
                             borderWidth: 1,
-                            displayColors: false
+                            displayColors: false,
+                            callbacks: {
+                              label: ctx => `${ctx.parsed.y} kg`
+                            }
                           }
                         },
                         scales: {
                           y: {
-                            grid: { 
-                              color: "rgba(255, 255, 255, 0.05)",
-                              borderDash: [5, 5]
+                            beginAtZero: true,
+                            grid: {
+                              color: "rgba(255, 255, 255, 0.06)",
+                              borderDash: [4, 4]
                             },
-                            ticks: { 
+                            border: { dash: [4, 4], color: "transparent" },
+                            ticks: {
                               color: "#9a9a9a",
-                              padding: 8
+                              padding: 12,
+                              callback: val => `${val} kg`
                             }
                           },
                           x: {
                             grid: { display: false },
-                            ticks: { 
+                            border: { color: "rgba(255,255,255,0.08)" },
+                            ticks: {
                               color: "#9a9a9a",
-                              padding: 8
+                              padding: 10,
+                              maxRotation: 0,
+                              callback: function(val) {
+                                const label = this.getLabelForValue(val);
+                                if (!label) return '';
+                                const p = label.split('-');
+                                return p.length === 3 ? `${p[1]}/${p[2]}` : label;
+                              }
                             }
                           }
                         }
-                      }} 
+                      }}
                     />
                   </div>
                 )}
@@ -726,65 +743,82 @@ function MonitorDashboard() {
                     <Line 
                       data={(canvas) => {
                         let ctx = canvas.getContext("2d");
-                        let gradientStroke = ctx.createLinearGradient(0, 320, 0, 40);
+                        let gradientStroke = ctx.createLinearGradient(0, 400, 0, 50);
                         gradientStroke.addColorStop(1, "rgba(253, 93, 147, 0.35)");
                         gradientStroke.addColorStop(0.4, "rgba(253, 93, 147, 0.05)");
                         gradientStroke.addColorStop(0, "rgba(253, 93, 147, 0)");
-                        
+
                         return {
                           labels: reductionChartData.labels,
                           datasets: [{
                             ...reductionChartData.datasets[0],
                             backgroundColor: gradientStroke,
                             borderColor: "#fd5d93",
-                            borderWidth: 3,
+                            borderWidth: 2.5,
                             pointBackgroundColor: "#ffffff",
                             pointBorderColor: "#fd5d93",
                             pointBorderWidth: 2,
                             pointHoverBackgroundColor: "#fd5d93",
                             pointHoverBorderColor: "#ffffff",
                             pointHoverBorderWidth: 2,
-                            pointRadius: 5,
+                            pointRadius: 4,
                             pointHoverRadius: 7,
                           }]
                         };
-                      }} 
+                      }}
                       options={{
                         maintainAspectRatio: false,
+                        layout: {
+                          padding: { top: 16, right: 20, bottom: 8, left: 8 }
+                        },
                         plugins: {
                           legend: { display: false },
                           tooltip: {
                             backgroundColor: "#1e1e2f",
                             titleColor: "#ffffff",
                             bodyColor: "#fd5d93",
-                            bodySpacing: 4,
-                            padding: 12,
+                            bodySpacing: 6,
+                            padding: 14,
                             cornerRadius: 8,
                             borderColor: "rgba(253, 93, 147, 0.3)",
                             borderWidth: 1,
-                            displayColors: false
+                            displayColors: false,
+                            callbacks: {
+                              label: ctx => `${ctx.parsed.y} kg`
+                            }
                           }
                         },
                         scales: {
                           y: {
-                            grid: { 
-                              color: "rgba(255, 255, 255, 0.05)",
-                              borderDash: [5, 5]
+                            beginAtZero: true,
+                            grid: {
+                              color: "rgba(255, 255, 255, 0.06)",
+                              borderDash: [4, 4]
                             },
-                            ticks: { 
+                            border: { dash: [4, 4], color: "transparent" },
+                            ticks: {
                               color: "#9a9a9a",
-                              padding: 8
+                              padding: 12,
+                              callback: val => `${val} kg`
                             }
                           },
                           x: {
                             grid: { display: false },
-                            ticks: { 
+                            border: { color: "rgba(255,255,255,0.08)" },
+                            ticks: {
                               color: "#9a9a9a",
-                              padding: 8
+                              padding: 10,
+                              maxRotation: 0,
+                              callback: function(val) {
+                                const label = this.getLabelForValue(val);
+                                if (!label) return '';
+                                const p = label.split('-');
+                                return p.length === 3 ? `${p[1]}/${p[2]}` : label;
+                              }
                             }
                           }
                         }
-                      }} 
+                      }}
                     />
                   </div>
                 )}

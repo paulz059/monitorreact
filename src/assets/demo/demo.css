@@ -157,9 +157,17 @@
 
 /* 美化圖表容器 */
 .custom-chart-container {
-  height: 340px !important;
+  height: 400px !important;
   position: relative;
   width: 100%;
+  padding: 8px 4px 0;
+}
+
+@media (max-width: 768px) {
+  .custom-chart-container {
+    height: 260px !important;
+    padding: 4px 0 0;
+  }
 }
 
 /* 增加卡片的高級質感與懸停效果 */
