@@ -1,0 +1,26 @@
+{
+  "resourceName": "SensorDataCache",
+  "tableName": "SensorDataCache",
+  "partitionKey": {
+    "fieldName": "cache_key",
+    "fieldType": "string"
+  },
+  "sortKey": {
+    "fieldName": "timestamp_sk",
+    "fieldType": "string"
+  },
+  "gsi": [
+    {
+      "name": "date-timestamp-index",
+      "partitionKey": {
+        "fieldName": "date",
+        "fieldType": "string"
+      },
+      "sortKey": {
+        "fieldName": "timestamp",
+        "fieldType": "string"
+      }
+    }
+  ],
+  "triggerFunctions": []
+}

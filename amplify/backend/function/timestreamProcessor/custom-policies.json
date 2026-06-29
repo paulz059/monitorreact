@@ -1,0 +1,24 @@
+[
+  {
+    "Action": [
+      "timestream:Select",
+      "timestream:DescribeTable",
+      "timestream:ListMeasures"
+    ],
+    "Resource": [
+      {
+        "Fn::Sub": "arn:aws:timestream:${AWS::Region}:${AWS::AccountId}:database/BBox01TestSampleDB/table/LiveData"
+      }
+    ],
+    "Effect": "Allow"
+  },
+  {
+    "Action": [
+      "timestream:DescribeEndpoints"
+    ],
+    "Resource": [
+      "*"
+    ],
+    "Effect": "Allow"
+  }
+]

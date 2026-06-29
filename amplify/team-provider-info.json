@@ -1,0 +1,43 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-monitorreact-dev-19705-authRole",
+      "UnauthRoleArn": "arn:aws:iam::683817964508:role/amplify-monitorreact-dev-19705-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::683817964508:role/amplify-monitorreact-dev-19705-authRole",
+      "Region": "ap-southeast-2",
+      "DeploymentBucketName": "amplify-monitorreact-dev-19705-deployment",
+      "UnauthRoleName": "amplify-monitorreact-dev-19705-unauthRole",
+      "StackName": "amplify-monitorreact-dev-19705",
+      "StackId": "arn:aws:cloudformation:ap-southeast-2:683817964508:stack/amplify-monitorreact-dev-19705/27887450-431e-11f1-a0f9-02ecaca835d7",
+      "AmplifyAppId": "d17bp1mbnkflf",
+      "APIGatewayAuthURL": "https://s3.amazonaws.com/amplify-monitorreact-dev-19705-deployment/amplify-cfn-templates/api/APIGatewayAuthStack.json"
+    },
+    "categories": {
+      "function": {
+        "timestreamProcessor": {
+          "deploymentBucketName": "amplify-monitorreact-dev-19705-deployment",
+          "s3Key": "amplify-builds/timestreamProcessor-304e39674e417152775a-build.zip"
+        },
+        "monitorreact4d35ba0f": {
+          "deploymentBucketName": "amplify-monitorreact-dev-19705-deployment",
+          "s3Key": "amplify-builds/monitorreact4d35ba0f-6862653770562f4e7a41-build.zip"
+        }
+      },
+      "auth": {
+        "monitorreact": {}
+      },
+      "api": {
+        "monitorApi": {}
+      },
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d17bp1mbnkflf",
+          "type": "manual"
+        }
+      },
+      "storage": {
+        "SensorDataCache": {}
+      }
+    }
+  }
+}

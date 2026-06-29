@@ -1,0 +1,17 @@
+{
+  "queryStringParameters": {
+    "hour": "20260507_03"
+  },
+  "httpMethod": "GET",
+  "path": "/data",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "requestContext": {
+    "resourcePath": "/data",
+    "httpMethod": "GET",
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  }
+}

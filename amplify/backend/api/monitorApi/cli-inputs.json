@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "paths": {
+    "/data": {
+      "name": "/data",
+      "lambdaFunction": "monitorreact4d35ba0f",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ]
+      }
+    }
+  }
+}

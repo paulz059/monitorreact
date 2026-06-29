@@ -1,21 +1,5 @@
-/*!
-
-=========================================================
-* Black Dashboard React v1.2.2
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/black-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-* Licensed under MIT (https://github.com/creativetimofficial/black-dashboard-react/blob/master/LICENSE.md)
-
-* Coded by Creative Tim
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-*/
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { get } from 'aws-amplify/api';
 import { Line } from "react-chartjs-2";
 import {
   Card,
@@ -24,242 +8,841 @@ import {
   CardTitle,
   Row,
   Col,
+  Table,
+  Spinner,
+  Badge,
   FormGroup,
   Label,
   Input,
+  Alert
 } from "reactstrap";
 
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
-
-
-
-
-// Dummy data for charts
-const dummyChartData = {
-  A: { data1: [10, 20, 30, 25, 40, 35, 50] },
-  B: { data1: [15, 25, 35, 30, 45, 40, 55] },
-  C: { data1: [20, 30, 40, 35, 50, 45, 60] },
-  D: { data1: [25, 35, 45, 40, 55, 50, 65] },
-};
-
-const chartOptions = {
- 
-    options: {
-    maintainAspectRatio: false, // 讓圖表完整填滿外層高度
-    responsive: true,           // 讓圖表隨螢幕縮放
-    plugins: {
-      legend: {
-        display: false,         // 隱藏圖例
-      },
-      tooltip: {
-        enabled: false,         // 隱藏提示框
-      },
-    },
-    scales: {
-      y: {  // 注意：新版已經沒有 yAxes 陣列了，改成 y 物件
-        ticks: {
-          color: "#9f9f9f",     // 注意：新版 fontColor 改為 color
-          maxTicksLimit: 5,
-        },
-        grid: {                 // 注意：新版 gridLines 改為 grid
-          drawBorder: false,
-          color: "rgba(255,255,255,0.05)",
-        },
-      },
-      x: {  // 注意：新版沒有 xAxes 陣列，改成 x 物件
-        ticks: {
-          padding: 10,          // 減少 padding，避免文字被往下推到看不見
-          color: "#9f9f9f",
-    },
-        grid: {
-          drawBorder: false,
-          color: "rgba(255,255,255,0.1)",
-        },
-      },
-    },
-  }
-
-
-};
-
-
-
-const chartHeight = 300; // 設定圖表高度
+// 5. 主儀表板畫面
 function MonitorDashboard() {
-  const [locations, setLocations] = useState(["A", "B", "C", "D"]);
+  const [loading, setLoading] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [error, setError] = useState(null);
+  const [rawData, setRawData] = useState({}); 
+  const [historyData, setHistoryData] = useState(null);
+  const [weight1History, setWeight1History] = useState([]);
+  const [weight2History, setWeight2History] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState("");
+  const [selectedDevID, setSelectedDevID] = useState("");
+  const [activeHistorySensor, setActiveHistorySensor] = useState("weight1");
 
-  const handleLocationChange = (e) => {
-    const value = e.target.value;
-    if (locations.includes(value)) {
-      setLocations(locations.filter((loc) => loc !== value));
-    } else {
-      setLocations([...locations, value]);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const restOperation = get({ 
+        apiName: 'monitorApi', 
+        path: '/data',
+        options: { queryParams: { type: 'latest' } }
+      });
+      
+      const { body } = await restOperation.response;
+      const response = await body.json();
+      
+      if (response && response.data && response.data.LATEST) {
+        const transformedData = { 'B-BOX-01': response.data.LATEST };
+        setRawData(transformedData);
+        setLastUpdated(response.last_updated || "Unknown");
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load latest data. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  const fetchSensorHistory = useCallback(async (sensorType, limitDays = '7') => {
+    if (!selectedDevID) return [];
+    try {
+      const restOperation = get({ 
+        apiName: 'monitorApi', 
+        path: '/data',
+        options: { 
+          queryParams: { 
+            type: 'history', 
+            sensorType: sensorType, 
+            days: limitDays,
+            devID: selectedDevID
+          } 
+        }
+      });
+      const { body } = await restOperation.response;
+      const response = await body.json();
+      return response.history || [];
+    } catch (err) {
+      console.error(`Error fetching history for ${sensorType}:`, err);
+      return [];
+    }
+  }, [selectedDevID]);
+
+  // 主要歷史圖表資料抓取
+  useEffect(() => {
+    const loadMainHistory = async () => {
+      if (!selectedDevID || !activeHistorySensor) return;
+      setLoadingHistory(true);
+      const data = await fetchSensorHistory(activeHistorySensor);
+      setHistoryData(data);
+      setLoadingHistory(false);
+    };
+    loadMainHistory();
+  }, [activeHistorySensor, selectedDevID, fetchSensorHistory]);
+
+  // 今日與週加總資料抓取 (weight1 & weight2)
+  useEffect(() => {
+    const loadWeightSums = async () => {
+      if (!selectedDevID) return;
+      // 改為抓取 7 天以支援週圖表
+      const [w1, w2] = await Promise.all([
+        fetchSensorHistory('weight1', '7'),
+        fetchSensorHistory('weight2', '7')
+      ]);
+      setWeight1History(w1);
+      setWeight2History(w2);
+    };
+    loadWeightSums();
+  }, [selectedDevID, fetchSensorHistory]);
+
+  // Weight parameters are now retrieved from the latest device sensor reading directly
+
+  const weightChartData = useMemo(() => {
+    if (!historyData || historyData.length === 0) {
+      return {
+        labels: [],
+        datasets: [{
+          label: 'No data available',
+          data: [],
+          borderColor: "#1f8ef1",
+          backgroundColor: "rgba(29,140,248,0.2)",
+          fill: true
+        }]
+      };
+    }
+    
+    const filteredData = historyData.filter(item => item.sensorType === activeHistorySensor);
+
+    const dailyAggregates = filteredData.reduce((acc, item) => {
+      const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date] += parseFloat(item.value || 0);
+      return acc;
+    }, {});
+
+    const sortedDates = Object.keys(dailyAggregates).sort();
+    const values = sortedDates.map(date => dailyAggregates[date].toFixed(2));
+    
+    return {
+      labels: sortedDates,
+      datasets: [{
+        label: `Daily Total ${activeHistorySensor} (7 days)`,
+        data: values,
+        borderColor: "#1f8ef1",
+        backgroundColor: "rgba(29,140,248,0.2)",
+        fill: true,
+        tension: 0.4
+      }]
+    };
+  }, [historyData, activeHistorySensor]);
+
+  const reductionChartData = useMemo(() => {
+    if (!weight1History || weight1History.length === 0 || !weight2History || weight2History.length === 0) {
+      return {
+        labels: [],
+        datasets: [{
+          label: 'No data available',
+          data: [],
+          borderColor: "#fd5d93",
+          backgroundColor: "rgba(253,93,147,0.2)",
+          fill: true
+        }]
+      };
+    }
+
+    const weight1Daily = weight1History.reduce((acc, item) => {
+      const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
+      if (!acc[date]) acc[date] = 0;
+      acc[date] += parseFloat(item.value || 0);
+      return acc;
+    }, {});
+
+    const weight2Daily = weight2History.reduce((acc, item) => {
+      const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
+      if (!acc[date]) acc[date] = 0;
+      acc[date] += parseFloat(item.value || 0);
+      return acc;
+    }, {});
+
+    const allDates = Array.from(new Set([
+      ...Object.keys(weight1Daily),
+      ...Object.keys(weight2Daily)
+    ])).sort();
+
+    const values = allDates.map(date => {
+      const w1 = weight1Daily[date] || 0;
+      const w2 = weight2Daily[date] || 0;
+      const biomassOut = w2 / 15;
+      const reduction = (w1 * 1.5) + (biomassOut * 0.9635);
+      return reduction.toFixed(2);
+    });
+
+    return {
+      labels: allDates,
+      datasets: [{
+        label: "Daily Reduction (kg)",
+        data: values,
+        borderColor: "#fd5d93",
+        backgroundColor: "rgba(253,93,147,0.2)",
+        fill: true,
+        tension: 0.4
+      }]
+    };
+  }, [weight1History, weight2History]);
+
+  const totalReduction7Days = useMemo(() => {
+    if (!reductionChartData || !reductionChartData.datasets || reductionChartData.datasets[0].data.length === 0) {
+      return "0.00";
+    }
+    const sum = reductionChartData.datasets[0].data.reduce((acc, val) => acc + parseFloat(val || 0), 0);
+    return sum.toFixed(2);
+  }, [reductionChartData]);
+
+  const devices = useMemo(() => {
+    if (!rawData || !rawData['B-BOX-01']) return [];
+    
+    const devicesMap = {};
+    
+    rawData['B-BOX-01'].forEach(record => {
+      const { devID, sensorType, value, time } = record;
+      
+      if (!devicesMap[devID]) {
+        devicesMap[devID] = {
+          devID: devID,
+          lastMsgID: "N/A",
+          lastTime: "1970-01-01T00:00:00Z",
+          sensors: {}
+        };
+      }
+      
+      devicesMap[devID].sensors[sensorType] = value;
+      if (new Date(time) > new Date(devicesMap[devID].lastTime)) {
+        devicesMap[devID].lastTime = time;
+      }
+    });
+
+    return Object.values(devicesMap).sort((a, b) => a.devID.localeCompare(b.devID));
+  }, [rawData]);
+
+  useEffect(() => {
+    if (!selectedDevID && devices.length > 0) {
+      const firstDev = devices[0];
+      setSelectedDevID(firstDev.devID);
+      
+      if (firstDev.sensors && !('weight1' in firstDev.sensors) && ('weight2' in firstDev.sensors)) {
+        setActiveHistorySensor("weight2");
+      }
+    } else if (selectedDevID) {
+      const currentDev = devices.find(d => d.devID === selectedDevID);
+      if (currentDev && currentDev.sensors) {
+        if (!(activeHistorySensor in currentDev.sensors)) {
+          if ('weight1' in currentDev.sensors) setActiveHistorySensor("weight1");
+          else if ('weight2' in currentDev.sensors) setActiveHistorySensor("weight2");
+        }
+      }
+    }
+  }, [devices, selectedDevID, activeHistorySensor]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const selectedDeviceData = devices.find(d => d.devID === selectedDevID);
+
+  const latestWeight1 = selectedDeviceData?.sensors?.weight1;
+  const latestWeight2 = selectedDeviceData?.sensors?.weight2;
+
+  const biomassOutput = useMemo(() => {
+    if (latestWeight2 === undefined || latestWeight2 === null) return "0.00";
+    return (parseFloat(latestWeight2) / 15).toFixed(2);
+  }, [latestWeight2]);
+
+  const getAlertClass = (type, value) => {
+    const val = parseFloat(value);
+    if (type === "Temperature" && val > 37) return "card-warning-alert";
+    if (type === "Humidity" && val > 75) return "card-warning-alert";
+    if (type === "CO2" && val > 5000) return "card-warning-alert";
+    if (type === "NH3" && val > 1000) return "card-warning-alert";
+    if (type === "ACMotor" && val > 1.5) return "card-warning-alert";
+    if (type === "BatVoltage" && val < 1.5) return "card-warning-alert";
+    return "";
   };
 
   return (
-    <>
-      <div className="content">
+    <div className="content">
+      {error && (
+        <Alert color="danger" toggle={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {/* 頂部控制欄 */}
+      <Row>
+        <Col xs="12">
+          <Card>
+            <CardHeader>
+              <Row className="align-items-center">
+                <Col md="6">
+                  <CardTitle tag="h2">Monitor Dashboard</CardTitle>
+                  <p className="text-muted">Last Update: {lastUpdated}</p>
+                </Col>
+                <Col md="6" className="text-right">
+                  <button className="btn btn-info btn-sm" onClick={fetchData} disabled={loading}>
+                    {loading ? <Spinner size="sm" /> : "Refresh"}
+                  </button>
+                </Col>
+              </Row>
+            </CardHeader>
+            <CardBody>
+              <Row>
+                <Col md="4">
+                  <FormGroup>
+                    <Label for="devSelect" className="text-white">Select Device (devID)</Label>
+                    <Input 
+                      type="select" 
+                      id="devSelect"
+                      value={selectedDevID}
+                      onChange={(e) => setSelectedDevID(e.target.value)}
+                      className="bg-dark text-white border-info"
+                    >
+                      <option value="">-- Choose a Device --</option>
+                      {devices.map(dev => (
+                        <option key={dev.devID} value={dev.devID}>{dev.devID}</option>
+                      ))}
+                    </Input>
+                  </FormGroup>
+                </Col>
+                {selectedDeviceData && (
+                  <Col md="8" className="d-flex align-items-center justify-content-end">
+                    <div className="text-right">
+                      <p className="mb-0 text-muted">Last Seen: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
+                    </div>
+                  </Col>
+                )}
+              </Row>
+            </CardBody>
+          </Card>
+        </Col>
+      </Row>
+
+      {selectedDeviceData && (
+        <>
+          {/* 第一區 WASTE PROCESSED */}
+          <h3 className="section-title text-success">
+            <i className="tim-icons icon-delivery-fast mr-2" /> WASTE PROCESSED
+          </h3>
+          <Row>
+            <Col lg="4" md="6">
+              <Card className="card-stats">
+                <CardBody>
+                  <Row>
+                    <Col xs="5">
+                      <div className="info-icon text-center icon-success">
+                        <i className="tim-icons icon-delivery-fast" />
+                      </div>
+                    </Col>
+                    <Col xs="7">
+                      <div className="numbers">
+                        <p className="card-category">TODAY'S INPUT (weight1)</p>
+                        <CardTitle tag="h3">
+                          {latestWeight1 !== undefined && latestWeight1 !== null ? parseFloat(latestWeight1).toFixed(2) : "--"} <small>kg</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+            <Col lg="4" md="6">
+              <Card className="card-stats">
+                <CardBody>
+                  <Row>
+                    <Col xs="5">
+                      <div className="info-icon text-center icon-primary">
+                        <i className="tim-icons icon-chart-pie-36" />
+                      </div>
+                    </Col>
+                    <Col xs="7">
+                      <div className="numbers">
+                        <p className="card-category">CURRENT BIOMASS (weight2)</p>
+                        <CardTitle tag="h3">
+                          {latestWeight2 !== undefined && latestWeight2 !== null ? parseFloat(latestWeight2).toFixed(2) : "--"} <small>kg</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+            <Col lg="4" md="6">
+              <Card className="card-stats">
+                <CardBody>
+                  <Row>
+                    <Col xs="5">
+                      <div className="info-icon text-center icon-warning">
+                        <i className="tim-icons icon-coins" />
+                      </div>
+                    </Col>
+                    <Col xs="7">
+                      <div className="numbers">
+                        <p className="card-category">BIOMASS OUTPUT</p>
+                        <CardTitle tag="h3">
+                          {biomassOutput} <small>kg</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* 第2區 ENVIRONMENTAL SENSORS */}
+          <h3 className="section-title text-info">
+            <i className="tim-icons icon-world mr-2" /> ENVIRONMENTAL SENSORS
+          </h3>
+          <Row>
+            {/* CHAMBER TEMP */}
+            <Col lg="4" md="6">
+              <Card className={`card-stats ${getAlertClass("Temperature", selectedDeviceData.sensors.Temperature)}`}>
+                <CardBody>
+                  <Row>
+                    <Col xs="4">
+                      <div className="info-icon text-center icon-info">
+                        <i className="tim-icons icon-thermometer" />
+                      </div>
+                    </Col>
+                    <Col xs="8">
+                      <div className="numbers">
+                        <p className="card-category">CHAMBER TEMP</p>
+                        <CardTitle tag="h3">
+                          {selectedDeviceData.sensors.Temperature ?? "--"} <small>°C</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+            {/* HUMIDITY */}
+            <Col lg="4" md="6">
+              <Card className={`card-stats ${getAlertClass("Humidity", selectedDeviceData.sensors.Humidity)}`}>
+                <CardBody>
+                  <Row>
+                    <Col xs="4">
+                      <div className="info-icon text-center icon-info">
+                        <i className="tim-icons icon-drop-16" />
+                      </div>
+                    </Col>
+                    <Col xs="8">
+                      <div className="numbers">
+                        <p className="card-category">HUMIDITY</p>
+                        <CardTitle tag="h3">
+                          {selectedDeviceData.sensors.Humidity ?? "--"} <small>%</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+            {/* CO2 & NH3 LEVEL */}
+            <Col lg="4" md="6">
+              {(() => {
+                const co2Val = parseFloat(selectedDeviceData.sensors.CO2 ?? 0);
+                const nh3Val = parseFloat(selectedDeviceData.sensors.NH3 ?? 0);
+                const isAlert = co2Val > 5000 || nh3Val > 1000;
+                return (
+                  <Card className={`card-stats ${isAlert ? "card-warning-alert" : ""}`}>
+                    <CardBody>
+                      <Row>
+                        <Col xs="4">
+                          <div className="info-icon text-center icon-info">
+                            <i className="tim-icons icon-molecule-40" />
+                          </div>
+                        </Col>
+                        <Col xs="8">
+                          <div className="numbers">
+                            <p className="card-category">CO2 / NH3 LEVEL</p>
+                            <CardTitle tag="h3" style={{ fontSize: "1.2rem" }}>
+                              {selectedDeviceData.sensors.CO2 ?? "--"} / {selectedDeviceData.sensors.NH3 ?? "--"} <small>ppm</small>
+                            </CardTitle>
+                          </div>
+                        </Col>
+                      </Row>
+                    </CardBody>
+                  </Card>
+                );
+              })()}
+            </Col>
+          </Row>
+
+          {/* 第3區 ENERGY MONITORING */}
+          <h3 className="section-title text-warning">
+            <i className="tim-icons icon-bolt-31 mr-2" /> ENERGY MONITORING
+          </h3>
+          <Row>
+            {/* SYSTEM USAGE */}
+            <Col lg="6" md="6">
+              <Card className={`card-stats ${getAlertClass("ACMotor", selectedDeviceData.sensors.ACMotor)}`}>
+                <CardBody>
+                  <Row>
+                    <Col xs="4">
+                      <div className="info-icon text-center icon-warning">
+                        <i className="tim-icons icon-bolt-31" />
+                      </div>
+                    </Col>
+                    <Col xs="8">
+                      <div className="numbers">
+                        <p className="card-category">SYSTEM USAGE (ACMotor)</p>
+                        <CardTitle tag="h3">
+                          {selectedDeviceData.sensors.ACMotor ?? "--"} <small>kw</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+            {/* SOLAR GENERATION */}
+            <Col lg="6" md="6">
+              <Card className={`card-stats ${getAlertClass("BatVoltage", selectedDeviceData.sensors.BatVoltage)}`}>
+                <CardBody>
+                  <Row>
+                    <Col xs="4">
+                      <div className="info-icon text-center icon-warning">
+                        <i className="tim-icons icon-sound-wave" />
+                      </div>
+                    </Col>
+                    <Col xs="8">
+                      <div className="numbers">
+                        <p className="card-category">SOLAR GENERATION (BatVoltage)</p>
+                        <CardTitle tag="h3">
+                          {selectedDeviceData.sensors.BatVoltage ?? "--"} <small>kw</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* 第4區 REDUCTION */}
+          <h3 className="section-title text-danger">
+            <i className="tim-icons icon-trash-simple mr-2" /> REDUCTION
+          </h3>
+          <Row>
+            {/* LATEST REDUCTION */}
+            <Col lg="6" md="6">
+              <Card className="card-stats">
+                <CardBody>
+                  <Row>
+                    <Col xs="4">
+                      <div className="info-icon text-center icon-danger">
+                        <i className="tim-icons icon-trash-simple" />
+                      </div>
+                    </Col>
+                    <Col xs="8">
+                      <div className="numbers">
+                        <p className="card-category">LATEST REDUCTION</p>
+                        <CardTitle tag="h3">
+                          {(() => {
+                            const w1 = parseFloat(latestWeight1 || 0);
+                            const w2 = parseFloat(latestWeight2 || 0);
+                            const biomassOut = w2 / 15;
+                            const reduction = (w1 * 1.5) + (biomassOut * 0.9635);
+                            return reduction.toFixed(2);
+                          })()} <small>kg</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+            {/* TOTAL REDUCTION */}
+            <Col lg="6" md="6">
+              <Card className="card-stats">
+                <CardBody>
+                  <Row>
+                    <Col xs="4">
+                      <div className="info-icon text-center icon-primary">
+                        <i className="tim-icons icon-chart-bar-32" />
+                      </div>
+                    </Col>
+                    <Col xs="8">
+                      <div className="numbers">
+                        <p className="card-category">TOTAL REDUCTION (7 DAYS)</p>
+                        <CardTitle tag="h3">
+                          {totalReduction7Days} <small>kg</small>
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
+
+      {/* 歷史趨勢圖表區 */}
+      {selectedDeviceData && ('weight1' in selectedDeviceData.sensors || 'weight2' in selectedDeviceData.sensors) && (
         <Row>
           <Col xs="12">
-            <Card>
+            <Card className="card-chart">
               <CardHeader>
-                <CardTitle>Monitor Dashboard</CardTitle>
+                <Row>
+                  <Col className="text-left" sm="6">
+                    <h5 className="card-category">History Data</h5>
+                    <CardTitle tag="h2">Weight Trend (7 Days)</CardTitle>
+                  </Col>
+                  <Col sm="6" className="text-right">
+                    <div className="btn-group">
+                      {["weight1", "weight2"].map(s => (
+                        s in selectedDeviceData.sensors && (
+                          <button 
+                            key={s} 
+                            className={`btn btn-sm ${activeHistorySensor === s ? 'btn-info' : 'btn-secondary'}`}
+                            onClick={() => setActiveHistorySensor(s)}
+                          >
+                            {s}
+                          </button>
+                        )
+                      ))}
+                    </div>
+                  </Col>
+                </Row>
               </CardHeader>
               <CardBody>
-                <FormGroup>
-                  <Label>Select Locations:</Label>
-                  <div>
-                    <Label check>
-                      <Input
-                        type="checkbox"
-                        value="A"
-                        checked={locations.includes("A")}
-                        onChange={handleLocationChange}
-                      />{" "}
-                      Location A
-                    </Label>
-                    <Label check>
-                      <Input
-                        type="checkbox"
-                        value="B"
-                        checked={locations.includes("B")}
-                        onChange={handleLocationChange}
-                      />{" "}
-                      Location B
-                    </Label>
-                    <Label check>
-                      <Input
-                        type="checkbox"
-                        value="C"
-                        checked={locations.includes("C")}
-                        onChange={handleLocationChange}
-                      />{" "}
-                      Location C
-                    </Label>
-                    <Label check>
-                      <Input
-                        type="checkbox"
-                        value="D"
-                        checked={locations.includes("D")}
-                        onChange={handleLocationChange}
-                      />{" "}
-                      Location D
-                    </Label>
+                {loadingHistory ? (
+                  <div className="text-center py-5"><Spinner color="info" /></div>
+                ) : (
+                  <div className="custom-chart-container">
+                    <Line 
+                      data={(canvas) => {
+                        let ctx = canvas.getContext("2d");
+                        let gradientStroke = ctx.createLinearGradient(0, 320, 0, 40);
+                        gradientStroke.addColorStop(1, "rgba(0, 242, 196, 0.35)");
+                        gradientStroke.addColorStop(0.4, "rgba(0, 242, 196, 0.05)");
+                        gradientStroke.addColorStop(0, "rgba(0, 242, 196, 0)");
+                        
+                        return {
+                          labels: weightChartData.labels,
+                          datasets: [{
+                            ...weightChartData.datasets[0],
+                            backgroundColor: gradientStroke,
+                            borderColor: "#00f2c4",
+                            borderWidth: 3,
+                            pointBackgroundColor: "#ffffff",
+                            pointBorderColor: "#00f2c4",
+                            pointBorderWidth: 2,
+                            pointHoverBackgroundColor: "#00f2c4",
+                            pointHoverBorderColor: "#ffffff",
+                            pointHoverBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                          }]
+                        };
+                      }} 
+                      options={{
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { display: false },
+                          tooltip: {
+                            backgroundColor: "#1e1e2f",
+                            titleColor: "#ffffff",
+                            bodyColor: "#00f2c4",
+                            bodySpacing: 4,
+                            padding: 12,
+                            cornerRadius: 8,
+                            borderColor: "rgba(0, 242, 196, 0.3)",
+                            borderWidth: 1,
+                            displayColors: false
+                          }
+                        },
+                        scales: {
+                          y: {
+                            grid: { 
+                              color: "rgba(255, 255, 255, 0.05)",
+                              borderDash: [5, 5]
+                            },
+                            ticks: { 
+                              color: "#9a9a9a",
+                              padding: 8
+                            }
+                          },
+                          x: {
+                            grid: { display: false },
+                            ticks: { 
+                              color: "#9a9a9a",
+                              padding: 8
+                            }
+                          }
+                        }
+                      }} 
+                    />
                   </div>
-                </FormGroup>
+                )}
               </CardBody>
             </Card>
           </Col>
         </Row>
+      )}
+
+      {/* DAILY REDUCTION 歷史趨勢圖表區 */}
+      {selectedDeviceData && (
         <Row>
           <Col xs="12">
             <Card className="card-chart">
               <CardHeader>
-                <CardTitle tag="h3">Temperature Monitoring</CardTitle>
+                <Row>
+                  <Col className="text-left" sm="6">
+                    <h5 className="card-category">Reduction Analysis</h5>
+                    <CardTitle tag="h2">Daily Reduction Trend (7 Days)</CardTitle>
+                  </Col>
+                </Row>
               </CardHeader>
               <CardBody>
-                <div className="chart-area" style={{ height: chartHeight }}>
-                  <Line
-                    data={{
-                      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-                      datasets: locations.map((location) => ({
-                        label: `Location ${location}`,
-                        data: dummyChartData[location].data1,
-                        borderColor: `#e3e3e3`,
-                        backgroundColor: "transparent",
-                        pointBorderColor: "black",
-                        pointRadius: 5
-                      })),
-                    }}
-                    options={chartOptions.options}
-                  />
-                </div>
-              </CardBody>
-            </Card>
-          </Col>
-          <Col xs="12">
-            <Card className="card-chart">
-              <CardHeader>
-                <CardTitle tag="h3">Humidity Monitoring</CardTitle>
-              </CardHeader>
-              <CardBody>
-                <div className="chart-area" style={{ height: chartHeight }}>
-                  <Line
-                    data={{
-                      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-                      datasets: locations.map((location) => ({
-                        label: `Location ${location}`,
-                        data: dummyChartData[location].data1,
-                        borderColor: `#e3e3e3`,
-                        backgroundColor: "transparent",
-                        pointBorderColor: "black",
-                        pointRadius: 5
-                      })),
-                    }}
-                    options={chartOptions.options}
-                  />
-                </div>
-              </CardBody>
-            </Card>
-          </Col>
-        </Row>
-        <Row>
-          <Col xs="12">
-            <Card className="card-chart">
-              <CardHeader>
-                <CardTitle tag="h3">Weight Monitoring</CardTitle>
-              </CardHeader>
-              <CardBody>
-                <div className="chart-area" style={{ height: chartHeight }}>
-                  <Line
-                    data={{
-                      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-                      datasets: locations.map((location) => ({
-                        label: `Location ${location}`,
-                        data: dummyChartData[location].data1,
-                        borderColor: `#e3e3e3`,
-                        backgroundColor: "transparent",
-                        pointBorderColor: "black",
-                        pointRadius: 5
-                      })),
-                    }}
-                    options={chartOptions.options}
-                  />
-                </div>
-              </CardBody>
-            </Card>
-          </Col>
-          <Col xs="12">
-            <Card className="card-chart">
-              <CardHeader>
-                <CardTitle tag="h3">Outdoor Temperature Monitoring</CardTitle>
-              </CardHeader>
-              <CardBody>
-                <div className="chart-area" style={{ height: chartHeight }}>
-                  <Line
-                    data={{
-                      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-                      datasets: locations.map((location) => ({
-                        label: `Location ${location}`,
-                        data: dummyChartData[location].data1,
-                        borderColor: `#e3e3e3`,
-                        backgroundColor: "transparent",
-                        pointBorderColor: "black",
-                        pointRadius: 5
-                      })),
-                    }}
-                    options={chartOptions.options}
-                  />
-                </div>
+                {loadingHistory ? (
+                  <div className="text-center py-5"><Spinner color="info" /></div>
+                ) : (
+                  <div className="custom-chart-container">
+                    <Line 
+                      data={(canvas) => {
+                        let ctx = canvas.getContext("2d");
+                        let gradientStroke = ctx.createLinearGradient(0, 320, 0, 40);
+                        gradientStroke.addColorStop(1, "rgba(253, 93, 147, 0.35)");
+                        gradientStroke.addColorStop(0.4, "rgba(253, 93, 147, 0.05)");
+                        gradientStroke.addColorStop(0, "rgba(253, 93, 147, 0)");
+                        
+                        return {
+                          labels: reductionChartData.labels,
+                          datasets: [{
+                            ...reductionChartData.datasets[0],
+                            backgroundColor: gradientStroke,
+                            borderColor: "#fd5d93",
+                            borderWidth: 3,
+                            pointBackgroundColor: "#ffffff",
+                            pointBorderColor: "#fd5d93",
+                            pointBorderWidth: 2,
+                            pointHoverBackgroundColor: "#fd5d93",
+                            pointHoverBorderColor: "#ffffff",
+                            pointHoverBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                          }]
+                        };
+                      }} 
+                      options={{
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { display: false },
+                          tooltip: {
+                            backgroundColor: "#1e1e2f",
+                            titleColor: "#ffffff",
+                            bodyColor: "#fd5d93",
+                            bodySpacing: 4,
+                            padding: 12,
+                            cornerRadius: 8,
+                            borderColor: "rgba(253, 93, 147, 0.3)",
+                            borderWidth: 1,
+                            displayColors: false
+                          }
+                        },
+                        scales: {
+                          y: {
+                            grid: { 
+                              color: "rgba(255, 255, 255, 0.05)",
+                              borderDash: [5, 5]
+                            },
+                            ticks: { 
+                              color: "#9a9a9a",
+                              padding: 8
+                            }
+                          },
+                          x: {
+                            grid: { display: false },
+                            ticks: { 
+                              color: "#9a9a9a",
+                              padding: 8
+                            }
+                          }
+                        }
+                      }} 
+                    />
+                  </div>
+                )}
               </CardBody>
             </Card>
           </Col>
         </Row>
-      </div>
-    </>
+      )}
+
+      {/* 底部摘要表格 */}
+      <Row>
+        <Col xs="12">
+          <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Devices Overview</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Table className="tablesorter" responsive>
+                <thead className="text-primary">
+                  <tr>
+                    <th>devID</th>
+                    <th>Status</th>
+                    <th>Latest Values</th>
+                    <th>Last Seen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading && devices.length === 0 ? (
+                    <tr><td colSpan="4" className="text-center"><Spinner color="primary" /></td></tr>
+                  ) : (
+                    devices.map((dev, index) => (
+                      <tr 
+                        key={index} 
+                        style={{ cursor: 'pointer' }} 
+                        onClick={() => setSelectedDevID(dev.devID)}
+                        className={selectedDevID === dev.devID ? "table-info" : ""}
+                      >
+                        <td><span className="text-white font-weight-bold">{dev.devID}</span></td>
+                        <td>
+                          <Badge color="success">Online</Badge>
+                        </td>
+                        <td>
+                          {Object.entries(dev.sensors).slice(0, 3).map(([type, val], i) => (
+                            <Badge color="dark" key={i} className="mr-1">{type}: {val}</Badge>
+                          ))}
+                          {Object.keys(dev.sensors).length > 3 && <span className="text-muted">...</span>}
+                        </td>
+                        <td>{new Date(dev.lastTime).toLocaleString()}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </Table>
+            </CardBody>
+          </Card>
+        </Col>
+      </Row>
+    </div>
   );
 }
 

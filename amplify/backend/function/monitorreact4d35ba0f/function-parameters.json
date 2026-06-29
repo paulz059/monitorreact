@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "storage": {
+      "SensorDataCache": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    }
+  },
+  "lambdaLayers": []
+}
