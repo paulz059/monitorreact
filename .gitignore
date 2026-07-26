@@ -4,6 +4,10 @@ package-lock.json
 /build
 .vscode
 .eslintcache
+venv/
+.venv/
+*/venv/
+*/.venv/
 
 #amplify-do-not-edit-begin
 amplify/\#current-cloud-backend
