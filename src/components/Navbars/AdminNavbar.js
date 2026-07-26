@@ -18,6 +18,7 @@
 import React from "react";
 // nodejs library that concatenates classes
 import classNames from "classnames";
+import { useLanguage, languages } from "contexts/LanguageContext";
 
 // reactstrap components
 import {
@@ -43,6 +44,7 @@ function AdminNavbar(props) {
   const [collapseOpen, setcollapseOpen] = React.useState(false);
   const [modalSearch, setmodalSearch] = React.useState(false);
   const [color, setcolor] = React.useState("navbar-transparent");
+  const { language, setLanguage } = useLanguage();
   React.useEffect(() => {
     window.addEventListener("resize", updateColor);
     // Specify how to clean up after this effect:
@@ -71,6 +73,10 @@ function AdminNavbar(props) {
   const toggleModalSearch = () => {
     setmodalSearch(!modalSearch);
   };
+  // this function switches between English and Chinese UI text
+  const toggleLanguage = () => {
+    setLanguage(language === languages.en ? languages.zh : languages.en);
+  };
   return (
     <>
       <Navbar className={classNames("navbar-absolute", color)} expand="lg">
@@ -98,6 +104,13 @@ function AdminNavbar(props) {
           </NavbarToggler>
           <Collapse navbar isOpen={collapseOpen}>
             <Nav className="ml-auto" navbar>
+              <Button
+                color="link"
+                className="btn-language"
+                onClick={toggleLanguage}
+              >
+                {language === languages.en ? "中" : "EN"}
+              </Button>
               <InputGroup className="search-bar">
                 <Button color="link" onClick={toggleModalSearch}>
                   <i className="tim-icons icon-zoom-split" />
