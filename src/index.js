@@ -23,6 +23,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 
 import ThemeContextWrapper from "./components/ThemeWrapper/ThemeWrapper";
 import BackgroundColorWrapper from "./components/BackgroundColorWrapper/BackgroundColorWrapper";
+import LanguageContextWrapper from "./components/LanguageWrapper/LanguageWrapper";
 
 // 初始化 Amplify
 Amplify.configure(config);
@@ -30,25 +31,27 @@ Amplify.configure(config);
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
-  <ThemeContextWrapper>
-    <BackgroundColorWrapper>
-      {/* 🌟 加入 Authenticator 包裹整個 App */}
-      <Authenticator.Provider>
-        <Authenticator>
-          {({ signOut, user }) => (
-            <BrowserRouter>
-              <Routes>
-                <Route path="/admin/*" element={<AdminLayout />} />
-                <Route path="/rtl/*" element={<RTLLayout />} />
-                <Route
-                  path="*"
-                  element={<Navigate to="/admin/monitor" replace />}
-                />
-              </Routes>
-            </BrowserRouter>
-          )}
-        </Authenticator>
-      </Authenticator.Provider>
-    </BackgroundColorWrapper>
-  </ThemeContextWrapper>
+  <LanguageContextWrapper>
+    <ThemeContextWrapper>
+      <BackgroundColorWrapper>
+        {/* 🌟 加入 Authenticator 包裹整個 App */}
+        <Authenticator.Provider>
+          <Authenticator>
+            {({ signOut, user }) => (
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/admin/*" element={<AdminLayout />} />
+                  <Route path="/rtl/*" element={<RTLLayout />} />
+                  <Route
+                    path="*"
+                    element={<Navigate to="/admin/monitor" replace />}
+                  />
+                </Routes>
+              </BrowserRouter>
+            )}
+          </Authenticator>
+        </Authenticator.Provider>
+      </BackgroundColorWrapper>
+    </ThemeContextWrapper>
+  </LanguageContextWrapper>
 );
