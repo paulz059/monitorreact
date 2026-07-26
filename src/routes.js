@@ -22,14 +22,14 @@ import RawData from "views/RawData.js";
 var routes = [
   {
     path: "/monitor",
-    name: "Monitor Dashboard",
+    name: "nav.monitor",
     icon: "tim-icons icon-chart-pie-36",
     component: <MonitorDashboard />,
     layout: "/admin",
   },
   {
     path: "/raw-data",
-    name: "RAW 資料",
+    name: "nav.rawData",
     icon: "tim-icons icon-paper",
     component: <RawData />,
     layout: "/admin",

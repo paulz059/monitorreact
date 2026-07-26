@@ -30,12 +30,14 @@ import {
   BackgroundColorContext,
   backgroundColors,
 } from "contexts/BackgroundColorContext";
+import { useLanguage } from "contexts/LanguageContext";
 
 var ps;
 
 function Sidebar(props) {
   const location = useLocation();
   const sidebarRef = React.useRef(null);
+  const { t } = useLanguage();
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
     return location.pathname === routeName ? "active" : "";
@@ -134,7 +136,7 @@ function Sidebar(props) {
                       onClick={props.toggleSidebar}
                     >
                       <i className={prop.icon} />
-                      <p>{rtlActive ? prop.rtlName : prop.name}</p>
+                      <p>{rtlActive ? prop.rtlName : t(prop.name)}</p>
                     </NavLink>
                   </li>
                 );
