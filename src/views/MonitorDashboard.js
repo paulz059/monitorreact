@@ -16,9 +16,13 @@ import {
   Input,
   Alert
 } from "reactstrap";
+import { useLanguage } from "contexts/LanguageContext";
+
+const UNKNOWN_LAST_UPDATED = "__unknown__";
 
 // 5. 主儀表板畫面
 function MonitorDashboard() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [error, setError] = useState(null);
@@ -46,11 +50,11 @@ function MonitorDashboard() {
       if (response && response.data && response.data.LATEST) {
         const transformedData = { 'B-BOX-01': response.data.LATEST };
         setRawData(transformedData);
-        setLastUpdated(response.last_updated || "Unknown");
+        setLastUpdated(response.last_updated || UNKNOWN_LAST_UPDATED);
       }
     } catch (err) {
       console.error("Error fetching data:", err);
-      setError("Failed to load latest data. Please check your connection.");
+      setError("monitorDashboard.errorLoad");
     } finally {
       setLoading(false);
     }
@@ -286,7 +290,7 @@ function MonitorDashboard() {
     <div className="content">
       {error && (
         <Alert color="danger" toggle={() => setError(null)}>
-          {error}
+          {t(error)}
         </Alert>
       )}
 
@@ -297,12 +301,14 @@ function MonitorDashboard() {
             <CardHeader>
               <Row className="align-items-center">
                 <Col md="6">
-                  <CardTitle tag="h2">Monitor Dashboard</CardTitle>
-                  <p className="text-muted">Last Update: {lastUpdated}</p>
+                  <CardTitle tag="h2">{t('monitorDashboard.title')}</CardTitle>
+                  <p className="text-muted">
+                    {t('monitorDashboard.lastUpdate')}: {lastUpdated === UNKNOWN_LAST_UPDATED ? t('common.unknown') : lastUpdated}
+                  </p>
                 </Col>
                 <Col md="6" className="text-right">
                   <button className="btn btn-info btn-sm" onClick={fetchData} disabled={loading}>
-                    {loading ? <Spinner size="sm" /> : "Refresh"}
+                    {loading ? <Spinner size="sm" /> : t('common.refresh')}
                   </button>
                 </Col>
               </Row>
@@ -311,15 +317,15 @@ function MonitorDashboard() {
               <Row>
                 <Col md="4">
                   <FormGroup>
-                    <Label for="devSelect" className="text-white">Select Device (devID)</Label>
-                    <Input 
-                      type="select" 
+                    <Label for="devSelect" className="text-white">{t('monitorDashboard.selectDevice')}</Label>
+                    <Input
+                      type="select"
                       id="devSelect"
                       value={selectedDevID}
                       onChange={(e) => setSelectedDevID(e.target.value)}
                       className="bg-dark text-white border-info"
                     >
-                      <option value="">-- Choose a Device --</option>
+                      <option value="">{t('monitorDashboard.chooseDevice')}</option>
                       {devices.map(dev => (
                         <option key={dev.devID} value={dev.devID}>{dev.devID}</option>
                       ))}
@@ -329,7 +335,7 @@ function MonitorDashboard() {
                 {selectedDeviceData && (
                   <Col md="8" className="d-flex align-items-center justify-content-end">
                     <div className="text-right">
-                      <p className="mb-0 text-muted">Last Seen: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
+                      <p className="mb-0 text-muted">{t('monitorDashboard.lastSeen')}: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
                     </div>
                   </Col>
                 )}
@@ -343,7 +349,7 @@ function MonitorDashboard() {
         <>
           {/* 第一區 WASTE PROCESSED */}
           <h3 className="section-title text-success">
-            <i className="tim-icons icon-delivery-fast mr-2" /> WASTE PROCESSED
+            <i className="tim-icons icon-delivery-fast mr-2" /> {t('monitorDashboard.wasteProcessed')}
           </h3>
           <Row>
             <Col lg="4" md="6">
@@ -357,7 +363,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="7">
                       <div className="numbers">
-                        <p className="card-category">TODAY'S INPUT (weight1)</p>
+                        <p className="card-category">{t('monitorDashboard.todaysInput')}</p>
                         <CardTitle tag="h3">
                           {latestWeight1 !== undefined && latestWeight1 !== null ? parseFloat(latestWeight1).toFixed(2) : "--"} <small>kg</small>
                         </CardTitle>
@@ -378,7 +384,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="7">
                       <div className="numbers">
-                        <p className="card-category">CURRENT BIOMASS (weight2)</p>
+                        <p className="card-category">{t('monitorDashboard.currentBiomass')}</p>
                         <CardTitle tag="h3">
                           {latestWeight2 !== undefined && latestWeight2 !== null ? parseFloat(latestWeight2).toFixed(2) : "--"} <small>kg</small>
                         </CardTitle>
@@ -399,7 +405,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="7">
                       <div className="numbers">
-                        <p className="card-category">BIOMASS OUTPUT</p>
+                        <p className="card-category">{t('monitorDashboard.biomassOutput')}</p>
                         <CardTitle tag="h3">
                           {biomassOutput} <small>kg</small>
                         </CardTitle>
@@ -413,7 +419,7 @@ function MonitorDashboard() {
 
           {/* 第2區 ENVIRONMENTAL SENSORS */}
           <h3 className="section-title text-info">
-            <i className="tim-icons icon-world mr-2" /> ENVIRONMENTAL SENSORS
+            <i className="tim-icons icon-world mr-2" /> {t('monitorDashboard.environmentalSensors')}
           </h3>
           <Row>
             {/* CHAMBER TEMP */}
@@ -428,7 +434,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="8">
                       <div className="numbers">
-                        <p className="card-category">CHAMBER TEMP</p>
+                        <p className="card-category">{t('monitorDashboard.chamberTemp')}</p>
                         <CardTitle tag="h3">
                           {selectedDeviceData.sensors.Temperature ?? "--"} <small>°C</small>
                         </CardTitle>
@@ -450,7 +456,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="8">
                       <div className="numbers">
-                        <p className="card-category">HUMIDITY</p>
+                        <p className="card-category">{t('monitorDashboard.humidity')}</p>
                         <CardTitle tag="h3">
                           {selectedDeviceData.sensors.Humidity ?? "--"} <small>%</small>
                         </CardTitle>
@@ -477,7 +483,7 @@ function MonitorDashboard() {
                         </Col>
                         <Col xs="8">
                           <div className="numbers">
-                            <p className="card-category">CO2 / NH3 LEVEL</p>
+                            <p className="card-category">{t('monitorDashboard.co2Nh3Level')}</p>
                             <CardTitle tag="h3" style={{ fontSize: "1.2rem" }}>
                               {selectedDeviceData.sensors.CO2 ?? "--"} / {selectedDeviceData.sensors.NH3 ?? "--"} <small>ppm</small>
                             </CardTitle>
@@ -493,7 +499,7 @@ function MonitorDashboard() {
 
           {/* 第3區 ENERGY MONITORING */}
           <h3 className="section-title text-warning">
-            <i className="tim-icons icon-bolt-31 mr-2" /> ENERGY MONITORING
+            <i className="tim-icons icon-bolt-31 mr-2" /> {t('monitorDashboard.energyMonitoring')}
           </h3>
           <Row>
             {/* SYSTEM USAGE */}
@@ -508,7 +514,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="8">
                       <div className="numbers">
-                        <p className="card-category">SYSTEM USAGE (ACMotor)</p>
+                        <p className="card-category">{t('monitorDashboard.systemUsage')}</p>
                         <CardTitle tag="h3">
                           {selectedDeviceData.sensors.ACMotor ?? "--"} <small>kw</small>
                         </CardTitle>
@@ -530,7 +536,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="8">
                       <div className="numbers">
-                        <p className="card-category">SOLAR GENERATION (BatVoltage)</p>
+                        <p className="card-category">{t('monitorDashboard.solarGeneration')}</p>
                         <CardTitle tag="h3">
                           {selectedDeviceData.sensors.BatVoltage ?? "--"} <small>kw</small>
                         </CardTitle>
@@ -544,7 +550,7 @@ function MonitorDashboard() {
 
           {/* 第4區 REDUCTION */}
           <h3 className="section-title text-danger">
-            <i className="tim-icons icon-trash-simple mr-2" /> REDUCTION
+            <i className="tim-icons icon-trash-simple mr-2" /> {t('monitorDashboard.reduction')}
           </h3>
           <Row>
             {/* LATEST REDUCTION */}
@@ -559,7 +565,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="8">
                       <div className="numbers">
-                        <p className="card-category">LATEST REDUCTION</p>
+                        <p className="card-category">{t('monitorDashboard.latestReduction')}</p>
                         <CardTitle tag="h3">
                           {(() => {
                             const w1 = parseFloat(latestWeight1 || 0);
@@ -587,7 +593,7 @@ function MonitorDashboard() {
                     </Col>
                     <Col xs="8">
                       <div className="numbers">
-                        <p className="card-category">TOTAL REDUCTION (7 DAYS)</p>
+                        <p className="card-category">{t('monitorDashboard.totalReduction7Days')}</p>
                         <CardTitle tag="h3">
                           {totalReduction7Days} <small>kg</small>
                         </CardTitle>
@@ -609,8 +615,8 @@ function MonitorDashboard() {
               <CardHeader>
                 <Row>
                   <Col className="text-left" sm="6">
-                    <h5 className="card-category">History Data</h5>
-                    <CardTitle tag="h2">Weight Trend (7 Days)</CardTitle>
+                    <h5 className="card-category">{t('monitorDashboard.historyData')}</h5>
+                    <CardTitle tag="h2">{t('monitorDashboard.weightTrend')}</CardTitle>
                   </Col>
                   <Col sm="6" className="text-right">
                     <div className="btn-group">
@@ -730,8 +736,8 @@ function MonitorDashboard() {
               <CardHeader>
                 <Row>
                   <Col className="text-left" sm="6">
-                    <h5 className="card-category">Reduction Analysis</h5>
-                    <CardTitle tag="h2">Daily Reduction Trend (7 Days)</CardTitle>
+                    <h5 className="card-category">{t('monitorDashboard.reductionAnalysis')}</h5>
+                    <CardTitle tag="h2">{t('monitorDashboard.dailyReductionTrend')}</CardTitle>
                   </Col>
                 </Row>
               </CardHeader>
@@ -833,16 +839,16 @@ function MonitorDashboard() {
         <Col xs="12">
           <Card>
             <CardHeader>
-              <CardTitle tag="h4">Devices Overview</CardTitle>
+              <CardTitle tag="h4">{t('monitorDashboard.devicesOverview')}</CardTitle>
             </CardHeader>
             <CardBody>
               <Table className="tablesorter" responsive>
                 <thead className="text-primary">
                   <tr>
-                    <th>devID</th>
-                    <th>Status</th>
-                    <th>Latest Values</th>
-                    <th>Last Seen</th>
+                    <th>{t('monitorDashboard.devIdColumn')}</th>
+                    <th>{t('monitorDashboard.statusColumn')}</th>
+                    <th>{t('monitorDashboard.latestValuesColumn')}</th>
+                    <th>{t('monitorDashboard.lastSeenColumn')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -858,7 +864,7 @@ function MonitorDashboard() {
                       >
                         <td><span className="text-white font-weight-bold">{dev.devID}</span></td>
                         <td>
-                          <Badge color="success">Online</Badge>
+                          <Badge color="success">{t('common.online')}</Badge>
                         </td>
                         <td>
                           {Object.entries(dev.sensors).slice(0, 3).map(([type, val], i) => (
