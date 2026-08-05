@@ -490,7 +490,7 @@ function MonitorDashboard() {
             <i className="tim-icons icon-molecule-40 mr-2" /> {t('monitorDashboard.biomassPerformance')}
           </h3>
           <Row>
-            <Col xs="12">
+            <Col lg="6" md="8" xs="12">
               <Card>
                 <CardHeader>
                   <CardTitle tag="h4">{t('monitorDashboard.larvalGrowthStage')}</CardTitle>
@@ -514,13 +514,45 @@ function MonitorDashboard() {
                             <td>{selectedDeviceData.sensors.Temperature ?? "--"} °C</td>
                             <td>{selectedDeviceData.sensors.Humidity ?? "--"} %</td>
                             <td>
-                              <Badge color={isActive ? "success" : "secondary"}>
+                              <Badge color={isActive ? "success" : "dark"}>
                                 {isActive ? t('monitorDashboard.statusActive') : t('monitorDashboard.statusInactive')}
                               </Badge>
                             </td>
                           </tr>
                         );
                       })()}
+                    </tbody>
+                  </Table>
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* SYSTEM STATUS 系統狀態 */}
+          <h3 className="section-title text-info">
+            <i className="tim-icons icon-settings-gear-63 mr-2" /> {t('monitorDashboard.systemStatus')}
+          </h3>
+          <Row>
+            <Col xs="12">
+              <Card>
+                <CardHeader>
+                  <CardTitle tag="h4">{t('monitorDashboard.systemStatus')}</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <Table className="tablesorter" responsive>
+                    <thead className="text-primary">
+                      <tr>
+                        {["TiltDetect", "RollMotor", "CBoardPD", "FanMotorIN", "FanMotorOUT", "rssi", "value"].map(id => (
+                          <th key={id}>{id}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {["TiltDetect", "RollMotor", "CBoardPD", "FanMotorIN", "FanMotorOUT", "rssi", "value"].map(id => (
+                          <td key={id}>{selectedDeviceData.sensors[id] ?? "--"}</td>
+                        ))}
+                      </tr>
                     </tbody>
                   </Table>
                 </CardBody>
