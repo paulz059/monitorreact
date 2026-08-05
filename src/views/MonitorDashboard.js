@@ -485,6 +485,49 @@ function MonitorDashboard() {
             </Col>
           </Row>
 
+          {/* BIOMASS PERFORMANCE 幼蟲健康度 */}
+          <h3 className="section-title text-success">
+            <i className="tim-icons icon-molecule-40 mr-2" /> {t('monitorDashboard.biomassPerformance')}
+          </h3>
+          <Row>
+            <Col xs="12">
+              <Card>
+                <CardHeader>
+                  <CardTitle tag="h4">{t('monitorDashboard.larvalGrowthStage')}</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <Table className="tablesorter" responsive>
+                    <thead className="text-primary">
+                      <tr>
+                        <th>{t('monitorDashboard.chamberTemp')}</th>
+                        <th>{t('monitorDashboard.humidity')}</th>
+                        <th>{t('monitorDashboard.growthStatusColumn')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const temp = parseFloat(selectedDeviceData.sensors.Temperature);
+                        const humidity = parseFloat(selectedDeviceData.sensors.Humidity);
+                        const isActive = temp >= 15 && temp <= 45 && humidity >= 35 && humidity <= 75;
+                        return (
+                          <tr>
+                            <td>{selectedDeviceData.sensors.Temperature ?? "--"} °C</td>
+                            <td>{selectedDeviceData.sensors.Humidity ?? "--"} %</td>
+                            <td>
+                              <Badge color={isActive ? "success" : "secondary"}>
+                                {isActive ? t('monitorDashboard.statusActive') : t('monitorDashboard.statusInactive')}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })()}
+                    </tbody>
+                  </Table>
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>
+
           {/* 第3區 ENERGY MONITORING */}
           <h3 className="section-title text-warning">
             <i className="tim-icons icon-bolt-31 mr-2" /> {t('monitorDashboard.energyMonitoring')}

@@ -20,7 +20,7 @@ dynamodb = boto3.resource('dynamodb', region_name=REGION)
 # Sensor categorization based on design plan
 AGGREGATE_SENSORS = {'weight1', 'weight2'}
 CRITICAL_SENSORS = {'Temperature', 'Humidity', 'CO2', 'NH3', 'rssi'}
-MAINTENANCE_SENSORS = {'ACMotor', 'BatVoltage', 'CBoardPD', 'FanMotorIN', 'FanMotorOUT'}
+MAINTENANCE_SENSORS = {'ACMotor', 'BatVoltage', 'CBoardPD', 'FanMotorIN', 'FanMotorOUT', 'GPS', 'TiltDetect', 'RollMotor', 'value'}
 
 def handler(event, context):
     """
