@@ -539,7 +539,7 @@ function MonitorDashboard() {
                   <CardTitle tag="h4">{t('monitorDashboard.systemStatus')}</CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                  <div className="table-responsive" style={{ overflowX: 'auto', overflowY: 'visible' }}>
                     <Table className="tablesorter">
                       <thead className="text-primary">
                         <tr>
