@@ -32,7 +32,7 @@ function MonitorDashboard() {
   const [weight2History, setWeight2History] = useState([]);
   const [lastUpdated, setLastUpdated] = useState("");
   const [selectedDevID, setSelectedDevID] = useState("");
-  const [activeHistorySensor, setActiveHistorySensor] = useState("weight1");
+  const [weightTrendDays, setWeightTrendDays] = useState("7");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -84,17 +84,17 @@ function MonitorDashboard() {
     }
   }, [selectedDevID]);
 
-  // 主要歷史圖表資料抓取
+  // CONTAINER WEIGHT TREND 圖表資料抓取 (固定 weight2，天數可切換 7/15/30)
   useEffect(() => {
     const loadMainHistory = async () => {
-      if (!selectedDevID || !activeHistorySensor) return;
+      if (!selectedDevID) return;
       setLoadingHistory(true);
-      const data = await fetchSensorHistory(activeHistorySensor);
+      const data = await fetchSensorHistory("weight2", weightTrendDays);
       setHistoryData(data);
       setLoadingHistory(false);
     };
     loadMainHistory();
-  }, [activeHistorySensor, selectedDevID, fetchSensorHistory]);
+  }, [weightTrendDays, selectedDevID, fetchSensorHistory]);
 
   // 今日與週加總資料抓取 (weight1 & weight2)
   useEffect(() => {
@@ -127,24 +127,25 @@ function MonitorDashboard() {
       };
     }
     
-    const filteredData = historyData.filter(item => item.sensorType === activeHistorySensor);
+    const filteredData = historyData.filter(item => item.sensorType === "weight2");
 
-    const dailyAggregates = filteredData.reduce((acc, item) => {
+    // 取每日最後一筆紀錄 (依 timestamp 判斷)
+    const dailyLastRecord = filteredData.reduce((acc, item) => {
       const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
-      if (!acc[date]) {
-        acc[date] = 0;
+      const currentTime = item.timestamp || item.date || "";
+      if (!acc[date] || currentTime >= acc[date].time) {
+        acc[date] = { value: parseFloat(item.value || 0), time: currentTime };
       }
-      acc[date] += parseFloat(item.value || 0);
       return acc;
     }, {});
 
-    const sortedDates = Object.keys(dailyAggregates).sort();
-    const values = sortedDates.map(date => dailyAggregates[date].toFixed(2));
-    
+    const sortedDates = Object.keys(dailyLastRecord).sort();
+    const values = sortedDates.map(date => dailyLastRecord[date].value.toFixed(2));
+
     return {
       labels: sortedDates,
       datasets: [{
-        label: `Daily Total ${activeHistorySensor} (7 days)`,
+        label: `weight2 (${weightTrendDays} days)`,
         data: values,
         borderColor: "#1f8ef1",
         backgroundColor: "rgba(29,140,248,0.2)",
@@ -152,7 +153,7 @@ function MonitorDashboard() {
         tension: 0.4
       }]
     };
-  }, [historyData, activeHistorySensor]);
+  }, [historyData, weightTrendDays]);
 
   const reductionChartData = useMemo(() => {
     if (!weight1History || weight1History.length === 0 || !weight2History || weight2History.length === 0) {
@@ -244,22 +245,9 @@ function MonitorDashboard() {
 
   useEffect(() => {
     if (!selectedDevID && devices.length > 0) {
-      const firstDev = devices[0];
-      setSelectedDevID(firstDev.devID);
-      
-      if (firstDev.sensors && !('weight1' in firstDev.sensors) && ('weight2' in firstDev.sensors)) {
-        setActiveHistorySensor("weight2");
-      }
-    } else if (selectedDevID) {
-      const currentDev = devices.find(d => d.devID === selectedDevID);
-      if (currentDev && currentDev.sensors) {
-        if (!(activeHistorySensor in currentDev.sensors)) {
-          if ('weight1' in currentDev.sensors) setActiveHistorySensor("weight1");
-          else if ('weight2' in currentDev.sensors) setActiveHistorySensor("weight2");
-        }
-      }
+      setSelectedDevID(devices[0].devID);
     }
-  }, [devices, selectedDevID, activeHistorySensor]);
+  }, [devices, selectedDevID]);
 
   useEffect(() => {
     fetchData();
@@ -607,8 +595,8 @@ function MonitorDashboard() {
         </>
       )}
 
-      {/* 歷史趨勢圖表區 */}
-      {selectedDeviceData && ('weight1' in selectedDeviceData.sensors || 'weight2' in selectedDeviceData.sensors) && (
+      {/* CONTAINER WEIGHT TREND 歷史趨勢圖表區 */}
+      {selectedDeviceData && ('weight2' in selectedDeviceData.sensors) && (
         <Row>
           <Col xs="12">
             <Card className="card-chart">
@@ -620,16 +608,14 @@ function MonitorDashboard() {
                   </Col>
                   <Col sm="6" className="text-right">
                     <div className="btn-group">
-                      {["weight1", "weight2"].map(s => (
-                        s in selectedDeviceData.sensors && (
-                          <button 
-                            key={s} 
-                            className={`btn btn-sm ${activeHistorySensor === s ? 'btn-info' : 'btn-secondary'}`}
-                            onClick={() => setActiveHistorySensor(s)}
-                          >
-                            {s}
-                          </button>
-                        )
+                      {["7", "15", "30"].map(d => (
+                        <button
+                          key={d}
+                          className={`btn btn-sm ${weightTrendDays === d ? 'btn-info' : 'btn-secondary'}`}
+                          onClick={() => setWeightTrendDays(d)}
+                        >
+                          {t(`monitorDashboard.days${d}`)}
+                        </button>
                       ))}
                     </div>
                   </Col>
