@@ -16,7 +16,7 @@
       "function": {
         "timestreamProcessor": {
           "deploymentBucketName": "amplify-monitorreact-dev-19705-deployment",
-          "s3Key": "amplify-builds/timestreamProcessor-304e39674e417152775a-build.zip"
+          "s3Key": "amplify-builds/timestreamProcessor-367373426d6672784446-build.zip"
         },
         "monitorreact4d35ba0f": {
           "deploymentBucketName": "amplify-monitorreact-dev-19705-deployment",
