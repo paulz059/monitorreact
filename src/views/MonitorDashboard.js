@@ -793,21 +793,21 @@ function MonitorDashboard() {
                           y: {
                             beginAtZero: true,
                             grid: {
-                              color: "rgba(255, 255, 255, 0.06)",
+                              color: "rgba(0, 0, 0, 0.06)",
                               borderDash: [4, 4]
                             },
                             border: { dash: [4, 4], color: "transparent" },
                             ticks: {
-                              color: "#9a9a9a",
+                              color: "#6c6c6c",
                               padding: 12,
                               callback: val => `${val} kg`
                             }
                           },
                           x: {
                             grid: { display: false },
-                            border: { color: "rgba(255,255,255,0.08)" },
+                            border: { color: "rgba(0,0,0,0.08)" },
                             ticks: {
-                              color: "#9a9a9a",
+                              color: "#6c6c6c",
                               padding: 10,
                               maxRotation: 0,
                               callback: function(val) {
@@ -899,21 +899,21 @@ function MonitorDashboard() {
                           y: {
                             beginAtZero: true,
                             grid: {
-                              color: "rgba(255, 255, 255, 0.06)",
+                              color: "rgba(0, 0, 0, 0.06)",
                               borderDash: [4, 4]
                             },
                             border: { dash: [4, 4], color: "transparent" },
                             ticks: {
-                              color: "#9a9a9a",
+                              color: "#6c6c6c",
                               padding: 12,
                               callback: val => `${val} kg`
                             }
                           },
                           x: {
                             grid: { display: false },
-                            border: { color: "rgba(255,255,255,0.08)" },
+                            border: { color: "rgba(0,0,0,0.08)" },
                             ticks: {
-                              color: "#9a9a9a",
+                              color: "#6c6c6c",
                               padding: 10,
                               maxRotation: 0,
                               callback: function(val) {
