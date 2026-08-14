@@ -483,6 +483,38 @@ function MonitorDashboard() {
                 );
               })()}
             </Col>
+            {/* GPS LOCATION */}
+            <Col lg="4" md="6">
+              <Card className="card-stats">
+                <CardBody>
+                  <Row>
+                    <Col xs="4">
+                      <div className="info-icon text-center icon-info">
+                        <i className="tim-icons icon-square-pin" />
+                      </div>
+                    </Col>
+                    <Col xs="8">
+                      <div className="numbers">
+                        <p className="card-category">{t('monitorDashboard.gpsLocation')}</p>
+                        <CardTitle tag="h3" style={{ fontSize: "1.1rem" }}>
+                          {selectedDeviceData.sensors.GPS ? (
+                            <a
+                              href={`https://www.google.com/maps?q=${selectedDeviceData.sensors.GPS}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {selectedDeviceData.sensors.GPS}
+                            </a>
+                          ) : (
+                            "--"
+                          )}
+                        </CardTitle>
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            </Col>
           </Row>
 
           {/* BIOMASS PERFORMANCE 幼蟲健康度 */}
