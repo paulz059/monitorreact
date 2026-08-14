@@ -342,7 +342,7 @@ function MonitorDashboard() {
       {selectedDeviceData && (
         <>
           {/* 第一區 WASTE PROCESSED */}
-          <h3 className="section-title text-success">
+          <h3 className="section-title">
             <i className="tim-icons icon-delivery-fast mr-2" /> {t('monitorDashboard.wasteProcessed')}
           </h3>
           <Row>
@@ -412,7 +412,7 @@ function MonitorDashboard() {
           </Row>
 
           {/* 第2區 ENVIRONMENTAL SENSORS */}
-          <h3 className="section-title text-info">
+          <h3 className="section-title">
             <i className="tim-icons icon-world mr-2" /> {t('monitorDashboard.environmentalSensors')}
           </h3>
           <Row>
@@ -524,7 +524,7 @@ function MonitorDashboard() {
           </Row>
 
           {/* BIOMASS PERFORMANCE 幼蟲健康度 */}
-          <h3 className="section-title text-success">
+          <h3 className="section-title">
             <i className="tim-icons icon-molecule-40 mr-2" /> {t('monitorDashboard.biomassPerformance')}
           </h3>
           <Row>
@@ -535,7 +535,7 @@ function MonitorDashboard() {
                 </CardHeader>
                 <CardBody>
                   <Table className="tablesorter">
-                    <thead className="text-primary">
+                    <thead className="bg-primary text-white">
                       <tr>
                         <th>{t('monitorDashboard.chamberTemp')}</th>
                         <th>{t('monitorDashboard.humidity')}</th>
@@ -567,7 +567,7 @@ function MonitorDashboard() {
           </Row>
 
           {/* SYSTEM STATUS 系統狀態 */}
-          <h3 className="section-title text-info">
+          <h3 className="section-title">
             <i className="tim-icons icon-settings-gear-63 mr-2" /> {t('monitorDashboard.systemStatus')}
           </h3>
           <Row>
@@ -579,7 +579,7 @@ function MonitorDashboard() {
                 <CardBody>
                   <div className="table-responsive" style={{ overflowX: 'auto', overflowY: 'visible' }}>
                     <Table className="tablesorter">
-                      <thead className="text-primary">
+                      <thead className="bg-primary text-white">
                         <tr>
                           {["TiltDetect", "RollMotor", "CBoardPD", "FanMotorIN", "FanMotorOUT", "rssi", "value"].map(id => (
                             <th key={id}>{id}</th>
@@ -601,7 +601,7 @@ function MonitorDashboard() {
           </Row>
 
           {/* 第3區 ENERGY MONITORING */}
-          <h3 className="section-title text-warning">
+          <h3 className="section-title">
             <i className="tim-icons icon-bolt-31 mr-2" /> {t('monitorDashboard.energyMonitoring')}
           </h3>
           <Row>
@@ -652,7 +652,7 @@ function MonitorDashboard() {
           </Row>
 
           {/* 第4區 REDUCTION */}
-          <h3 className="section-title text-danger">
+          <h3 className="section-title">
             <i className="tim-icons icon-trash-simple mr-2" /> {t('monitorDashboard.reduction')}
           </h3>
           <Row>
@@ -944,7 +944,7 @@ function MonitorDashboard() {
             </CardHeader>
             <CardBody>
               <Table className="tablesorter" responsive>
-                <thead className="text-primary">
+                <thead className="bg-primary text-white">
                   <tr>
                     <th>{t('monitorDashboard.devIdColumn')}</th>
                     <th>{t('monitorDashboard.statusColumn')}</th>
