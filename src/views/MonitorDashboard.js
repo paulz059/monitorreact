@@ -131,10 +131,12 @@ function MonitorDashboard() {
 
     // 取每日最後一筆紀錄 (依 timestamp 判斷)
     const dailyLastRecord = filteredData.reduce((acc, item) => {
+      const parsedValue = parseFloat(item.value || 0);
+      if (!Number.isFinite(parsedValue)) return acc;
       const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
       const currentTime = item.timestamp || item.date || "";
       if (!acc[date] || currentTime >= acc[date].time) {
-        acc[date] = { value: parseFloat(item.value || 0), time: currentTime };
+        acc[date] = { value: parsedValue, time: currentTime };
       }
       return acc;
     }, {});
@@ -170,16 +172,20 @@ function MonitorDashboard() {
     }
 
     const weight1Daily = weight1History.reduce((acc, item) => {
+      const parsedValue = parseFloat(item.value || 0);
+      if (!Number.isFinite(parsedValue)) return acc;
       const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
       if (!acc[date]) acc[date] = 0;
-      acc[date] += parseFloat(item.value || 0);
+      acc[date] += parsedValue;
       return acc;
     }, {});
 
     const weight2Daily = weight2History.reduce((acc, item) => {
+      const parsedValue = parseFloat(item.value || 0);
+      if (!Number.isFinite(parsedValue)) return acc;
       const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
       if (!acc[date]) acc[date] = 0;
-      acc[date] += parseFloat(item.value || 0);
+      acc[date] += parsedValue;
       return acc;
     }, {});
 
@@ -499,7 +505,7 @@ function MonitorDashboard() {
                         <CardTitle tag="h3" style={{ fontSize: "1.1rem" }}>
                           {selectedDeviceData.sensors.GPS ? (
                             <a
-                              href={`https://www.google.com/maps?q=${selectedDeviceData.sensors.GPS}`}
+                              href={`https://www.google.com/maps?q=${encodeURIComponent(selectedDeviceData.sensors.GPS)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                             >

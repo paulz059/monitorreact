@@ -20,6 +20,26 @@ class TestParseSensorValue(unittest.TestCase):
     def test_none_returns_none(self):
         self.assertIsNone(parse_sensor_value(None))
 
+    def test_nan_string_is_kept_as_is(self):
+        result = parse_sensor_value("nan")
+        self.assertEqual(result, "nan")
+
+    def test_NaN_string_is_kept_as_is(self):
+        result = parse_sensor_value("NaN")
+        self.assertEqual(result, "NaN")
+
+    def test_inf_string_is_kept_as_is(self):
+        result = parse_sensor_value("inf")
+        self.assertEqual(result, "inf")
+
+    def test_Infinity_string_is_kept_as_is(self):
+        result = parse_sensor_value("Infinity")
+        self.assertEqual(result, "Infinity")
+
+    def test_negative_inf_string_is_kept_as_is(self):
+        result = parse_sensor_value("-inf")
+        self.assertEqual(result, "-inf")
+
 
 if __name__ == "__main__":
     unittest.main()
