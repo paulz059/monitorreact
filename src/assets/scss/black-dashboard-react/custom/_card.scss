@@ -218,6 +218,24 @@
     }
 }
 
+.info-icon{
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  border-radius: 50%;
+  display: inline-block;
+
+  i{
+    color: $white;
+    line-height: 36px;
+  }
+
+  &.icon-primary,
+  &.icon-info{
+    background-color: #8a8a8a;
+  }
+}
+
 .card-body{
   padding: $card-spacer-y;
 }
