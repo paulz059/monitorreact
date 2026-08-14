@@ -4,7 +4,8 @@ import os
 import time
 from datetime import datetime, timezone
 from collections import defaultdict
-from decimal import Decimal
+
+from value_parsing import parse_sensor_value
 
 # Environmental configuration with portability fallbacks
 REGION = os.environ.get('AWS_REGION', 'ap-southeast-2')
@@ -44,8 +45,8 @@ def handler(event, context):
     try:
         # Fetch RAW data from the last 40 minutes (to ensure coverage of the 30m window)
         raw_query = f"""
-            SELECT devID, measure_name, 
-                   TRY_CAST("measure_value::varchar" AS DOUBLE) as val, 
+            SELECT devID, measure_name,
+                   "measure_value::varchar" as val_str,
                    time
             FROM "{TIMESTREAM_DB}"."{TIMESTREAM_TABLE}"
             WHERE time > ago(40m)
@@ -60,12 +61,12 @@ def handler(event, context):
         
         with table.batch_writer() as batch:
             for row in raw_results:
-                if 'measure_name' in row and row.get('val') is not None:
+                if 'measure_name' in row and row.get('val_str') is not None:
                     # Parse timestamp to get date for partitioning
                     ts_str = row['time'] # e.g. "2026-05-20 10:30:00.000000000"
                     dt_obj = datetime.strptime(ts_str.split('.')[0], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
                     date_str = dt_obj.strftime('%Y-%m-%d')
-                    
+
                     # New Logical Partitioning:
                     # PK: DEVICE#<devID>#DATE#<YYYY-MM-DD>
                     # SK: SENSOR#<sensorType>#TS#<ISO_Timestamp>
@@ -75,7 +76,7 @@ def handler(event, context):
                         'date': date_str, # 用於 GSI 優化查詢
                         'devID': row['devID'],
                         'sensorType': row['measure_name'],
-                        'value': float_to_decimal(row['val']),
+                        'value': parse_sensor_value(row['val_str']),
                         'timestamp': dt_obj.isoformat(),
                         'type': 'RAW_DATA',
                         'updated_at': now.isoformat(),
@@ -125,12 +126,3 @@ def parse_row(column_info, row):
             data[column_name] = None
     return data
 
-def float_to_decimal(value):
-    """Converts numeric values to Decimal for DynamoDB storage."""
-    if value is None:
-        return None
-    try:
-        # Convert through string to avoid float precision issues
-        return Decimal(str(value))
-    except:
-        return value
