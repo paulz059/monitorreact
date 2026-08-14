@@ -94,13 +94,13 @@ function RawData() {
             </CardHeader>
             <CardBody>
               <FormGroup>
-                <Label for="devSelect" className="text-white">{t('rawData.selectDevice')}</Label>
+                <Label for="devSelect" className="text-dark">{t('rawData.selectDevice')}</Label>
                 <Input
                   type="select"
                   id="devSelect"
                   value={selectedDevID}
                   onChange={(e) => setSelectedDevID(e.target.value)}
-                  className="bg-dark text-white border-info"
+                  className="bg-white text-dark border-info"
                 >
                   <option value="">{t('rawData.chooseDevice')}</option>
                   {devIDs.map(id => (

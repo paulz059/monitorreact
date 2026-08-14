@@ -311,13 +311,13 @@ function MonitorDashboard() {
               <Row>
                 <Col md="4">
                   <FormGroup>
-                    <Label for="devSelect" className="text-white">{t('monitorDashboard.selectDevice')}</Label>
+                    <Label for="devSelect" className="text-dark">{t('monitorDashboard.selectDevice')}</Label>
                     <Input
                       type="select"
                       id="devSelect"
                       value={selectedDevID}
                       onChange={(e) => setSelectedDevID(e.target.value)}
-                      className="bg-dark text-white border-info"
+                      className="bg-white text-dark border-info"
                     >
                       <option value="">{t('monitorDashboard.chooseDevice')}</option>
                       {devices.map(dev => (
@@ -535,7 +535,7 @@ function MonitorDashboard() {
                 </CardHeader>
                 <CardBody>
                   <Table className="tablesorter">
-                    <thead className="bg-primary text-white">
+                    <thead className="bg-white">
                       <tr>
                         <th>{t('monitorDashboard.chamberTemp')}</th>
                         <th>{t('monitorDashboard.humidity')}</th>
@@ -579,7 +579,7 @@ function MonitorDashboard() {
                 <CardBody>
                   <div className="table-responsive" style={{ overflowX: 'auto', overflowY: 'visible' }}>
                     <Table className="tablesorter">
-                      <thead className="bg-primary text-white">
+                      <thead className="bg-white">
                         <tr>
                           {["TiltDetect", "RollMotor", "CBoardPD", "FanMotorIN", "FanMotorOUT", "rssi", "value"].map(id => (
                             <th key={id}>{id}</th>
@@ -944,7 +944,7 @@ function MonitorDashboard() {
             </CardHeader>
             <CardBody>
               <Table className="tablesorter" responsive>
-                <thead className="bg-primary text-white">
+                <thead className="bg-white">
                   <tr>
                     <th>{t('monitorDashboard.devIdColumn')}</th>
                     <th>{t('monitorDashboard.statusColumn')}</th>
@@ -963,7 +963,7 @@ function MonitorDashboard() {
                         onClick={() => setSelectedDevID(dev.devID)}
                         className={selectedDevID === dev.devID ? "table-info" : ""}
                       >
-                        <td><span className="text-white font-weight-bold">{dev.devID}</span></td>
+                        <td><span className="text-dark font-weight-bold">{dev.devID}</span></td>
                         <td>
                           <Badge color="success">{t('common.online')}</Badge>
                         </td>
