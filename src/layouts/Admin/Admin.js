@@ -24,7 +24,6 @@ import PerfectScrollbar from "perfect-scrollbar";
 import AdminNavbar from "components/Navbars/AdminNavbar.js";
 import Footer from "components/Footer/Footer.js";
 import Sidebar from "components/Sidebar/Sidebar.js";
-import FixedPlugin from "components/FixedPlugin/FixedPlugin.js";
 
 import routes from "routes.js";
 
@@ -101,39 +100,36 @@ function Admin(props) {
   };
   return (
     <BackgroundColorContext.Consumer>
-      {({ color, changeColor }) => (
-        <React.Fragment>
-          <div className="wrapper">
-            <Sidebar
-              routes={routes}
-              logo={{
-                outterLink: "https://www.creative-tim.com/",
-                text: "Creative Tim",
-                imgSrc: logo,
-              }}
+      {({ color }) => (
+        <div className="wrapper">
+          <Sidebar
+            routes={routes}
+            logo={{
+              outterLink: "https://www.creative-tim.com/",
+              text: "Creative Tim",
+              imgSrc: logo,
+            }}
+            toggleSidebar={toggleSidebar}
+          />
+          <div className="main-panel" ref={mainPanelRef} data={color}>
+            <AdminNavbar
+              brandText={getBrandText(location.pathname)}
               toggleSidebar={toggleSidebar}
+              sidebarOpened={sidebarOpened}
             />
-            <div className="main-panel" ref={mainPanelRef} data={color}>
-              <AdminNavbar
-                brandText={getBrandText(location.pathname)}
-                toggleSidebar={toggleSidebar}
-                sidebarOpened={sidebarOpened}
+            <Routes>
+              {getRoutes(routes)}
+              <Route
+                path="/"
+                element={<Navigate to="/admin/monitor" replace />}
               />
-              <Routes>
-                {getRoutes(routes)}
-                <Route
-                  path="/"
-                  element={<Navigate to="/admin/monitor" replace />}
-                />
-              </Routes>
-              {
-                // we don't want the Footer to be rendered on map page
-                location.pathname === "/admin/maps" ? null : <Footer fluid />
-              }
-            </div>
+            </Routes>
+            {
+              // we don't want the Footer to be rendered on map page
+              location.pathname === "/admin/maps" ? null : <Footer fluid />
+            }
           </div>
-          <FixedPlugin bgColor={color} handleBgClick={changeColor} />
-        </React.Fragment>
+        </div>
       )}
     </BackgroundColorContext.Consumer>
   );
