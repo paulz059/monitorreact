@@ -120,8 +120,8 @@ function MonitorDashboard() {
         datasets: [{
           label: 'No data available',
           data: [],
-          borderColor: "#1f8ef1",
-          backgroundColor: "rgba(29,140,248,0.2)",
+          borderColor: "#c0c0c0",
+          backgroundColor: "rgba(192,192,192,0.2)",
           fill: true
         }]
       };
@@ -149,8 +149,8 @@ function MonitorDashboard() {
       datasets: [{
         label: `weight2 (${weightTrendDays} days)`,
         data: values,
-        borderColor: "#1f8ef1",
-        backgroundColor: "rgba(29,140,248,0.2)",
+        borderColor: "#c0c0c0",
+        backgroundColor: "rgba(192,192,192,0.2)",
         fill: true,
         tension: 0.4
       }]
@@ -164,8 +164,8 @@ function MonitorDashboard() {
         datasets: [{
           label: 'No data available',
           data: [],
-          borderColor: "#fd5d93",
-          backgroundColor: "rgba(253,93,147,0.2)",
+          borderColor: "#787878",
+          backgroundColor: "rgba(120,120,120,0.2)",
           fill: true
         }]
       };
@@ -207,8 +207,8 @@ function MonitorDashboard() {
       datasets: [{
         label: "Daily Reduction (kg)",
         data: values,
-        borderColor: "#fd5d93",
-        backgroundColor: "rgba(253,93,147,0.2)",
+        borderColor: "#787878",
+        backgroundColor: "rgba(120,120,120,0.2)",
         fill: true,
         tension: 0.4
       }]
@@ -745,21 +745,21 @@ function MonitorDashboard() {
                       data={(canvas) => {
                         let ctx = canvas.getContext("2d");
                         let gradientStroke = ctx.createLinearGradient(0, 400, 0, 50);
-                        gradientStroke.addColorStop(1, "rgba(0, 242, 196, 0.35)");
-                        gradientStroke.addColorStop(0.4, "rgba(0, 242, 196, 0.05)");
-                        gradientStroke.addColorStop(0, "rgba(0, 242, 196, 0)");
+                        gradientStroke.addColorStop(1, "rgba(192, 192, 192, 0.35)");
+                        gradientStroke.addColorStop(0.4, "rgba(192, 192, 192, 0.05)");
+                        gradientStroke.addColorStop(0, "rgba(192, 192, 192, 0)");
 
                         return {
                           labels: weightChartData.labels,
                           datasets: [{
                             ...weightChartData.datasets[0],
                             backgroundColor: gradientStroke,
-                            borderColor: "#00f2c4",
+                            borderColor: "#c0c0c0",
                             borderWidth: 2.5,
                             pointBackgroundColor: "#ffffff",
-                            pointBorderColor: "#00f2c4",
+                            pointBorderColor: "#c0c0c0",
                             pointBorderWidth: 2,
-                            pointHoverBackgroundColor: "#00f2c4",
+                            pointHoverBackgroundColor: "#c0c0c0",
                             pointHoverBorderColor: "#ffffff",
                             pointHoverBorderWidth: 2,
                             pointRadius: 4,
@@ -775,13 +775,13 @@ function MonitorDashboard() {
                         plugins: {
                           legend: { display: false },
                           tooltip: {
-                            backgroundColor: "#1e1e2f",
+                            backgroundColor: "#1e1e1e",
                             titleColor: "#ffffff",
-                            bodyColor: "#00f2c4",
+                            bodyColor: "#f5f5f5",
                             bodySpacing: 6,
                             padding: 14,
                             cornerRadius: 8,
-                            borderColor: "rgba(0, 242, 196, 0.3)",
+                            borderColor: "rgba(192, 192, 192, 0.3)",
                             borderWidth: 1,
                             displayColors: false,
                             callbacks: {
@@ -851,21 +851,21 @@ function MonitorDashboard() {
                       data={(canvas) => {
                         let ctx = canvas.getContext("2d");
                         let gradientStroke = ctx.createLinearGradient(0, 400, 0, 50);
-                        gradientStroke.addColorStop(1, "rgba(253, 93, 147, 0.35)");
-                        gradientStroke.addColorStop(0.4, "rgba(253, 93, 147, 0.05)");
-                        gradientStroke.addColorStop(0, "rgba(253, 93, 147, 0)");
+                        gradientStroke.addColorStop(1, "rgba(120, 120, 120, 0.35)");
+                        gradientStroke.addColorStop(0.4, "rgba(120, 120, 120, 0.05)");
+                        gradientStroke.addColorStop(0, "rgba(120, 120, 120, 0)");
 
                         return {
                           labels: reductionChartData.labels,
                           datasets: [{
                             ...reductionChartData.datasets[0],
                             backgroundColor: gradientStroke,
-                            borderColor: "#fd5d93",
+                            borderColor: "#787878",
                             borderWidth: 2.5,
                             pointBackgroundColor: "#ffffff",
-                            pointBorderColor: "#fd5d93",
+                            pointBorderColor: "#787878",
                             pointBorderWidth: 2,
-                            pointHoverBackgroundColor: "#fd5d93",
+                            pointHoverBackgroundColor: "#787878",
                             pointHoverBorderColor: "#ffffff",
                             pointHoverBorderWidth: 2,
                             pointRadius: 4,
@@ -881,13 +881,13 @@ function MonitorDashboard() {
                         plugins: {
                           legend: { display: false },
                           tooltip: {
-                            backgroundColor: "#1e1e2f",
+                            backgroundColor: "#1e1e1e",
                             titleColor: "#ffffff",
-                            bodyColor: "#fd5d93",
+                            bodyColor: "#f5f5f5",
                             bodySpacing: 6,
                             padding: 14,
                             cornerRadius: 8,
-                            borderColor: "rgba(253, 93, 147, 0.3)",
+                            borderColor: "rgba(120, 120, 120, 0.3)",
                             borderWidth: 1,
                             displayColors: false,
                             callbacks: {

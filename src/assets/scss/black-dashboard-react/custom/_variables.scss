@@ -19,8 +19,8 @@ $gray-300: #e3e3e3 !default;
 $gray-400: #ced4da !default;
 $gray-500: #adb5bd !default;
 $gray-600: #6c757d !default;   // Line footer color
-$gray-700: #525f7f !default;   // Line p color
-$gray-800: #32325d !default;   // Line heading color
+$gray-700: #c9c9c9 !default;   // Line p color
+$gray-800: #f5f5f5 !default;   // Line heading color
 $gray-900: #212529 !default;
 $link-disabled:              #666666 !default;
 $transparent-bg:             transparent !default;
@@ -96,33 +96,33 @@ $colors: map-merge((
 $default-color-opacity:      rgba(182, 182, 182, .6) !default;
 $orange-color:               #f96332 !default;
 
-$default:       #344675 !default;
-$primary:       #e14eca !default;
+$default:       #2a2a2e !default;
+$primary:       #55555a !default;
 $secondary:     #f4f5f7 !default;
 $success:       #00f2c3 !default;
-$info:          #1d8cf8 !default;
+$info:          #55555a !default;
 $warning:       #ff8d72 !default;
 $danger:        #fd5d93 !default;
-$black:         #222a42 !default;
+$black:         #18181b !default;
 
 
 // gradient
-$default-states:       #263148 !default;
-$primary-states:       #ba54f5 !default;
+$default-states:       #1f1f22 !default;
+$primary-states:       #3f3f43 !default;
 $success-states:       #0098f0 !default;
-$info-states:          #3358f4 !default;
+$info-states:          #3f3f43 !default;
 $warning-states:       #ff6491 !default;
 $danger-states:        #ec250d !default;
-$black-states:         #1d253b !default;
+$black-states:         #0f0f11 !default;
 
-$background-black:           #1e1e2f !default;
-$background-states-black:    #1e1e24 !default;
+$background-black:           #121212 !default;
+$background-states-black:    #0a0a0a !default;
 
 // opacity
 $default-opacity:      rgba(182, 182, 182, .6) !default;
-$primary-opacity:      rgba(249, 99, 50, .3) !default;
+$primary-opacity:      rgba(150, 150, 155, .3) !default;
 $success-opacity:      rgba(24, 206, 15, .3) !default;
-$info-opacity:         rgba(44, 168, 255, .3) !default;
+$info-opacity:         rgba(150, 150, 155, .3) !default;
 $warning-opacity:      rgba(255, 178, 54, .3) !default;
 $danger-opacity:       rgba(255, 54, 54, .3) !default;
 
@@ -895,7 +895,7 @@ $card-border-color:                 rgba($black, .05);
 $card-inner-border-radius:          calc(#{$card-border-radius} - #{$card-border-width});
 $card-cap-bg:                       $gray-100 !default;
 $card-bg:                           $white !default;
-$card-black-background:             #27293d !default;
+$card-black-background:             #1e1e1e !default;
 $card-img-overlay-padding:          1.25rem !default;
 
 //$card-group-margin:                 ($grid-gutter-width / 2);
