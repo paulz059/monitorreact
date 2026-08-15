@@ -77,14 +77,9 @@ function Sidebar(props) {
         </a>
       );
       logoText = (
-        <a
-          href={logo.outterLink}
-          className="simple-text logo-normal"
-          target="_blank"
-          onClick={props.toggleSidebar}
-        >
+        <div className="simple-text logo-normal">
           {logo.text}
-        </a>
+        </div>
       );
     } else {
       logoImg = (
