@@ -325,15 +325,15 @@ function MonitorDashboard() {
                       ))}
                     </Input>
                   </FormGroup>
+                  {selectedDeviceData && selectedDeviceData.sensors.GPS && (
+                    <p className="mb-0 text-dark">
+                      {t('monitorDashboard.gpsLocation')}: {selectedDeviceData.sensors.GPS}
+                    </p>
+                  )}
                 </Col>
                 {selectedDeviceData && (
                   <Col md="4" className="d-flex flex-column justify-content-center">
                     <p className="mb-0 text-muted">{t('monitorDashboard.lastSeen')}: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
-                    {selectedDeviceData.sensors.GPS && (
-                      <p className="mb-0 text-dark">
-                        {t('monitorDashboard.gpsLocation')}: {selectedDeviceData.sensors.GPS}
-                      </p>
-                    )}
                   </Col>
                 )}
                 {selectedDeviceData && selectedDeviceData.sensors.GPS && (
