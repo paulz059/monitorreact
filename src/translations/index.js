@@ -54,11 +54,12 @@ const translations = {
     },
     rawData: {
       title: "Raw Data Query",
-      subtitle: "View the raw JSON data returned from the database",
+      subtitle: "Export a device's raw sensor data from last month as a JSON file",
       selectDevice: "Select Device (devID)",
       chooseDevice: "-- Select a Device --",
-      msgId: "Msg ID",
-      noData: "No data available",
+      selectSensorType: "Select Sensor Type",
+      exportLastMonth: "Export Last Month's Data",
+      errorExport: "Failed to export data. Please check your connection.",
     },
   },
   zh: {
@@ -116,11 +117,12 @@ const translations = {
     },
     rawData: {
       title: "RAW 資料查詢",
-      subtitle: "檢視資料庫回傳的原始 JSON 數據",
+      subtitle: "匯出指定設備上個月的原始感測器資料（JSON 檔案）",
       selectDevice: "選擇設備 (devID)",
       chooseDevice: "-- 請選擇設備 --",
-      msgId: "Msg ID",
-      noData: "目前沒有資料",
+      selectSensorType: "選擇感測器類型",
+      exportLastMonth: "匯出上個月資料",
+      errorExport: "匯出失敗，請檢查網路連線。",
     },
   },
 };

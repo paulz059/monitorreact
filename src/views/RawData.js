@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { get } from 'aws-amplify/api';
 import {
   Card,
@@ -11,140 +11,166 @@ import {
   FormGroup,
   Label,
   Input,
-  Badge
+  Alert
 } from "reactstrap";
 import { useLanguage } from "contexts/LanguageContext";
 
+const SENSOR_TYPES = [
+  "weight1", "weight2", "Temperature", "Humidity", "CO2", "NH3", "rssi",
+  "ACMotor", "BatVoltage", "CBoardPD", "FanMotorIN", "FanMotorOUT",
+  "GPS", "TiltDetect", "RollMotor", "value"
+];
+
+function getLastMonthRange() {
+  const now = new Date();
+  const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthEnd = new Date(firstOfThisMonth.getTime() - 1);
+  const lastMonthStart = new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), 1);
+  return { start: lastMonthStart, end: lastMonthEnd };
+}
+
+function formatMonthLabel(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function RawData() {
   const { t } = useLanguage();
-  const [loading, setLoading] = useState(true);
-  const [rawData, setRawData] = useState({});
+  const [devIDs, setDevIDs] = useState([]);
   const [selectedDevID, setSelectedDevID] = useState("");
+  const [selectedSensorType, setSelectedSensorType] = useState(SENSOR_TYPES[0]);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchData();
+    const loadDeviceList = async () => {
+      try {
+        const restOperation = get({
+          apiName: 'monitorApi',
+          path: '/data',
+          options: { queryParams: { type: 'latest' } }
+        });
+        const { body } = await restOperation.response;
+        const response = await body.json();
+        const records = (response && response.data && response.data.LATEST) || [];
+        const ids = Array.from(new Set(records.map(r => r.devID))).sort();
+        setDevIDs(ids);
+      } catch (err) {
+        console.error("Error loading device list:", err);
+      }
+    };
+    loadDeviceList();
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const handleExport = async () => {
+    if (!selectedDevID) return;
+    setError(null);
+    setExporting(true);
     try {
-      const restOperation = get({ 
-        apiName: 'monitorApi', 
-        path: '/data' 
+      const { start, end } = getLastMonthRange();
+      const now = new Date();
+      const daysBack = Math.ceil((now - start) / (1000 * 60 * 60 * 24)) + 1;
+
+      const restOperation = get({
+        apiName: 'monitorApi',
+        path: '/data',
+        options: {
+          queryParams: {
+            type: 'history',
+            sensorType: selectedSensorType,
+            days: daysBack.toString(),
+            devID: selectedDevID
+          }
+        }
       });
       const { body } = await restOperation.response;
       const response = await body.json();
-      if (response && response.data) {
-        setRawData(response.data);
-      }
+      const allRecords = response.history || [];
+
+      const filtered = allRecords.filter(rec => {
+        if (!rec.timestamp) return false;
+        const recDate = new Date(rec.timestamp);
+        return recDate >= start && recDate <= end;
+      });
+
+      const exportPayload = { [selectedSensorType]: filtered };
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${selectedDevID}_${selectedSensorType}_${formatMonthLabel(start)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Error fetching raw data:", err);
+      console.error("Error exporting raw data:", err);
+      setError('rawData.errorExport');
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   };
 
-  // 將資料按 devID 分組
-  const devicesData = useMemo(() => {
-    const groups = {};
-    Object.entries(rawData).forEach(([msgID, records]) => {
-      records.forEach(record => {
-        const { devID } = record;
-        if (!groups[devID]) {
-          groups[devID] = [];
-        }
-        groups[devID].push({
-          msgID,
-          ...record
-        });
-      });
-    });
-    // 按時間降序排序（最新的在上面）
-    Object.keys(groups).forEach(id => {
-      groups[id].sort((a, b) => new Date(b.time) - new Date(a.time));
-    });
-    return groups;
-  }, [rawData]);
-
-  const devIDs = Object.keys(devicesData).sort();
-
-  useEffect(() => {
-    if (!selectedDevID && devIDs.length > 0) {
-      setSelectedDevID(devIDs[0]);
-    }
-  }, [devIDs, selectedDevID]);
-
   return (
     <div className="content">
+      {error && (
+        <Alert color="danger" toggle={() => setError(null)}>
+          {t(error)}
+        </Alert>
+      )}
       <Row>
         <Col md="12">
           <Card>
             <CardHeader>
-              <Row className="align-items-center">
-                <Col md="8">
-                  <CardTitle tag="h2">{t('rawData.title')}</CardTitle>
-                  <p className="text-muted">{t('rawData.subtitle')}</p>
+              <CardTitle tag="h2">{t('rawData.title')}</CardTitle>
+              <p className="text-muted">{t('rawData.subtitle')}</p>
+            </CardHeader>
+            <CardBody>
+              <Row>
+                <Col md="4">
+                  <FormGroup>
+                    <Label for="devSelect" className="text-dark">{t('rawData.selectDevice')}</Label>
+                    <Input
+                      type="select"
+                      id="devSelect"
+                      value={selectedDevID}
+                      onChange={(e) => setSelectedDevID(e.target.value)}
+                      className="bg-white text-dark border-info"
+                    >
+                      <option value="">{t('rawData.chooseDevice')}</option>
+                      {devIDs.map(id => (
+                        <option key={id} value={id}>{id}</option>
+                      ))}
+                    </Input>
+                  </FormGroup>
                 </Col>
-                <Col md="4" className="text-right">
-                  <button className="btn btn-info btn-sm" onClick={fetchData} disabled={loading}>
-                    {loading ? <Spinner size="sm" /> : t('common.refresh')}
+                <Col md="4">
+                  <FormGroup>
+                    <Label for="sensorTypeSelect" className="text-dark">{t('rawData.selectSensorType')}</Label>
+                    <Input
+                      type="select"
+                      id="sensorTypeSelect"
+                      value={selectedSensorType}
+                      onChange={(e) => setSelectedSensorType(e.target.value)}
+                      className="bg-white text-dark border-info"
+                    >
+                      {SENSOR_TYPES.map(sensorType => (
+                        <option key={sensorType} value={sensorType}>{sensorType}</option>
+                      ))}
+                    </Input>
+                  </FormGroup>
+                </Col>
+                <Col md="4" className="d-flex align-items-end">
+                  <button
+                    className="btn btn-info w-100"
+                    onClick={handleExport}
+                    disabled={!selectedDevID || exporting}
+                  >
+                    {exporting ? <Spinner size="sm" /> : t('rawData.exportLastMonth')}
                   </button>
                 </Col>
               </Row>
-            </CardHeader>
-            <CardBody>
-              <FormGroup>
-                <Label for="devSelect" className="text-dark">{t('rawData.selectDevice')}</Label>
-                <Input
-                  type="select"
-                  id="devSelect"
-                  value={selectedDevID}
-                  onChange={(e) => setSelectedDevID(e.target.value)}
-                  className="bg-white text-dark border-info"
-                >
-                  <option value="">{t('rawData.chooseDevice')}</option>
-                  {devIDs.map(id => (
-                    <option key={id} value={id}>{id}</option>
-                  ))}
-                </Input>
-              </FormGroup>
             </CardBody>
           </Card>
-        </Col>
-      </Row>
-
-      <Row>
-        <Col md="12">
-          {loading ? (
-            <div className="text-center p-5"><Spinner color="info" /></div>
-          ) : (
-            selectedDevID && devicesData[selectedDevID] ? (
-              devicesData[selectedDevID].map((record, index) => (
-                <Card key={index} className="mb-3 bg-dark border-secondary">
-                  <CardHeader className="py-2">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <Badge color="info">{t('rawData.msgId')}: {record.msgID}</Badge>
-                      <small className="text-muted">{new Date(record.time).toLocaleString()}</small>
-                    </div>
-                  </CardHeader>
-                  <CardBody className="py-2">
-                    <pre style={{ 
-                      backgroundColor: "#1e1e2f", 
-                      color: "#00d6b4", 
-                      padding: "15px", 
-                      borderRadius: "5px",
-                      fontSize: "13px",
-                      overflowX: "auto"
-                    }}>
-                      {JSON.stringify(record, null, 2)}
-                    </pre>
-                  </CardBody>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center p-5 text-muted">{t('rawData.noData')}</div>
-            )
-          )}
         </Col>
       </Row>
     </div>

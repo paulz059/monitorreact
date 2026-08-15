@@ -56,8 +56,8 @@ def handler(event, context):
         raw_results = run_query(raw_query)
 
         # --- DYNAMODB WRITES (Time-Series Pattern) ---
-        # TTL: Calculate expiration time (7 days from now) in Unix epoch seconds
-        expire_at = int(time.time() + (7 * 24 * 60 * 60))
+        # TTL: Calculate expiration time (30 days from now) in Unix epoch seconds
+        expire_at = int(time.time() + (30 * 24 * 60 * 60))
         
         with table.batch_writer() as batch:
             for row in raw_results:
