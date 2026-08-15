@@ -31,78 +31,9 @@
   }
 
   .sidebar{
-    @include linear-gradient($light-bg, $white);
     box-shadow: 0 2px 22px 0 rgba(0,0,0,.1), 0 4px 20px 0 rgba(0,0,0,.15);
-
     p{
-      color: $black-states;
-    }
-
-    .logo:after{
-      background: rgba($black-states, 0.1);
-    }
-
-    .nav{
-      i{
-        color: rgba($black-states, 0.7);
-      }
-
-      .sidebar-normal,
-      .sidebar-mini-icon{
-        color: rgba($black-states, 0.7);
-      }
-
-      li > a{
-        color: $black-states;
-      }
-
-      li:hover:not(.active) > a,
-      li:focus:not(.active) > a{
-        p, i{
-          color: $black-states;
-        }
-      }
-
-      li:hover:not(.active) > a i,
-      li:focus:not(.active) > a i{
-        color: $black-states;
-      }
-
-      li.active > a:not([data-toggle="collapse"]){
-        i, p{
-          color: $black-states;
-        }
-        &:before{
-          background: $black-states;
-        }
-      }
-
-      li.active > a[data-toggle="collapse"]{
-        color: $black-states;
-
-        i{
-          color: $black-states;
-        }
-
-        & + div .nav .active a{
-          .sidebar-mini-icon, .sidebar-normal{
-            color: $black-states;
-          }
-          &:before{
-            background: $black-states;
-          }
-        }
-
-        &:before{
-          background: rgba($black-states, 0.6);
-        }
-      }
-
-      [data-toggle="collapse"] ~ div > ul > li:hover > a{
-        .sidebar-mini-icon, .sidebar-normal{
-          color: $black-states;
-        }
-      }
+      color: $opacity-8;
     }
   }
 
