@@ -230,9 +230,12 @@
     line-height: 36px;
   }
 
-  &.icon-primary,
+  &.icon-primary{
+    background-color: $primary;
+  }
+
   &.icon-info{
-    background-color: #8a8a8a;
+    background-color: $info;
   }
 }
 
