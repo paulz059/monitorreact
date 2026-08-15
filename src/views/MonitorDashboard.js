@@ -327,10 +327,35 @@ function MonitorDashboard() {
                   </FormGroup>
                 </Col>
                 {selectedDeviceData && (
-                  <Col md="8" className="d-flex align-items-center justify-content-end">
-                    <div className="text-right">
-                      <p className="mb-0 text-muted">{t('monitorDashboard.lastSeen')}: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
-                    </div>
+                  <Col md="4" className="d-flex flex-column justify-content-center">
+                    <p className="mb-0 text-muted">{t('monitorDashboard.lastSeen')}: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
+                    {selectedDeviceData.sensors.GPS && (
+                      <p className="mb-0 text-dark">
+                        <i className="tim-icons icon-square-pin mr-1" />
+                        {t('monitorDashboard.gpsLocation')}: {selectedDeviceData.sensors.GPS}
+                      </p>
+                    )}
+                  </Col>
+                )}
+                {selectedDeviceData && selectedDeviceData.sensors.GPS && (
+                  <Col md="4">
+                    <a
+                      href={`https://www.google.com/maps?q=${encodeURIComponent(selectedDeviceData.sensors.GPS)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t('monitorDashboard.viewOnGoogleMaps')}
+                      className="d-block"
+                      style={{ borderRadius: "1rem", overflow: "hidden", border: "1px solid rgba(88,147,173,0.25)" }}
+                    >
+                      <iframe
+                        title="device-location-map"
+                        width="100%"
+                        height="160"
+                        style={{ border: 0, display: "block", pointerEvents: "none" }}
+                        loading="lazy"
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(selectedDeviceData.sensors.GPS)}&output=embed`}
+                      />
+                    </a>
                   </Col>
                 )}
               </Row>
@@ -488,38 +513,6 @@ function MonitorDashboard() {
                   </Card>
                 );
               })()}
-            </Col>
-            {/* GPS LOCATION */}
-            <Col lg="4" md="6">
-              <Card className="card-stats">
-                <CardBody>
-                  <Row>
-                    <Col xs="4">
-                      <div className="info-icon text-center icon-info">
-                        <i className="tim-icons icon-square-pin" />
-                      </div>
-                    </Col>
-                    <Col xs="8">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.gpsLocation')}</p>
-                        <CardTitle tag="h3" style={{ fontSize: "1.1rem" }}>
-                          {selectedDeviceData.sensors.GPS ? (
-                            <a
-                              href={`https://www.google.com/maps?q=${encodeURIComponent(selectedDeviceData.sensors.GPS)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {selectedDeviceData.sensors.GPS}
-                            </a>
-                          ) : (
-                            "--"
-                          )}
-                        </CardTitle>
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-              </Card>
             </Col>
           </Row>
 
