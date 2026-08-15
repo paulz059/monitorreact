@@ -24,7 +24,7 @@ $gray-800: #f5f5f5 !default;   // Line heading color
 $gray-900: #212529 !default;
 $link-disabled:              #666666 !default;
 $transparent-bg:             transparent !default;
-$light-bg:                   #f8f8f8 !default;
+$light-bg:                   #F1F5F8 !default;
 $dark-background:            #555555 !default;
 
 
@@ -96,24 +96,24 @@ $colors: map-merge((
 $default-color-opacity:      rgba(182, 182, 182, .6) !default;
 $orange-color:               #f96332 !default;
 
-$default:       #2a2a2e !default;
-$primary:       #55555a !default;
+$default:       #5893AD !default;
+$primary:       #052F5F !default;
 $secondary:     #f4f5f7 !default;
-$success:       #00f2c3 !default;
-$info:          #55555a !default;
-$warning:       #ff8d72 !default;
-$danger:        #fd5d93 !default;
-$black:         #000000 !default;
+$success:       #10B981 !default;
+$info:          #5893AD !default;
+$warning:       #F59E0B !default;
+$danger:        #EF4444 !default;
+$black:         #052F5F !default;
 
 
 // gradient
-$default-states:       #1f1f22 !default;
-$primary-states:       #3f3f43 !default;
+$default-states:       #3A7091 !default;
+$primary-states:       #0A192F !default;
 $success-states:       #0098f0 !default;
-$info-states:          #3f3f43 !default;
+$info-states:          #3A7091 !default;
 $warning-states:       #ff6491 !default;
 $danger-states:        #ec250d !default;
-$black-states:         #000000 !default;
+$black-states:         #052F5F !default;
 
 $background-black:           #121212 !default;
 $background-states-black:    #0a0a0a !default;
@@ -890,7 +890,7 @@ $pagination-disabled-border-color:  $gray-300 !default;
 $card-spacer-y:                     1.25rem !default;
 $card-spacer-x:                     1.5rem !default;
 $card-border-width:                 $border-width !default;
-$card-border-radius:                $border-radius-sm !default;
+$card-border-radius:                1.25rem !default;
 $card-border-color:                 rgba($black, .05);
 $card-inner-border-radius:          calc(#{$card-border-radius} - #{$card-border-width});
 $card-cap-bg:                       $gray-100 !default;
