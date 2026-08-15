@@ -331,7 +331,6 @@ function MonitorDashboard() {
                     <p className="mb-0 text-muted">{t('monitorDashboard.lastSeen')}: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
                     {selectedDeviceData.sensors.GPS && (
                       <p className="mb-0 text-dark">
-                        <i className="tim-icons icon-square-pin mr-1" />
                         {t('monitorDashboard.gpsLocation')}: {selectedDeviceData.sensors.GPS}
                       </p>
                     )}

@@ -7,11 +7,11 @@ const translations = {
       brand: "Brand",
     },
     nav: {
-      monitor: "Monitor Dashboard",
+      monitor: "B-BOX DASH Dashboard",
       rawData: "Raw Data",
     },
     monitorDashboard: {
-      title: "Monitor Dashboard",
+      title: "B-BOX DASH Dashboard",
       lastUpdate: "Last Update",
       selectDevice: "Select Device (devID)",
       chooseDevice: "-- Choose a Device --",
@@ -69,11 +69,11 @@ const translations = {
       brand: "品牌",
     },
     nav: {
-      monitor: "監控儀表板",
+      monitor: "B-BOX DASH 監控平台",
       rawData: "RAW 資料",
     },
     monitorDashboard: {
-      title: "監控儀表板",
+      title: "B-BOX DASH 監控平台",
       lastUpdate: "最後更新",
       selectDevice: "選擇設備 (devID)",
       chooseDevice: "-- 請選擇設備 --",

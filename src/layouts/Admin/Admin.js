@@ -29,14 +29,12 @@ import routes from "routes.js";
 
 import logo from "assets/img/react-logo.png";
 import { BackgroundColorContext } from "contexts/BackgroundColorContext";
-import { useLanguage } from "contexts/LanguageContext";
 
 var ps;
 
 function Admin(props) {
   const location = useLocation();
   const mainPanelRef = React.useRef(null);
-  const { t } = useLanguage();
   const [sidebarOpened, setsidebarOpened] = React.useState(
     document.documentElement.className.indexOf("nav-open") !== -1
   );
@@ -90,14 +88,6 @@ function Admin(props) {
       }
     });
   };
-  const getBrandText = (path) => {
-    for (let i = 0; i < routes.length; i++) {
-      if (location.pathname.indexOf(routes[i].layout + routes[i].path) !== -1) {
-        return t(routes[i].name);
-      }
-    }
-    return t("common.brand");
-  };
   return (
     <BackgroundColorContext.Consumer>
       {({ color }) => (
@@ -113,7 +103,6 @@ function Admin(props) {
           />
           <div className="main-panel" ref={mainPanelRef} data={color}>
             <AdminNavbar
-              brandText={getBrandText(location.pathname)}
               toggleSidebar={toggleSidebar}
               sidebarOpened={sidebarOpened}
             />
