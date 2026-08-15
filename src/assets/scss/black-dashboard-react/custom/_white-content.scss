@@ -162,7 +162,8 @@
 
   .card:not(.card-white){
     background: $white;
-    box-shadow: 0 1px 15px 0 rgba(123, 123, 123, 0.05);
+    border: 1px solid rgba(88, 147, 173, 0.25);
+    box-shadow: 0 4px 20px -2px rgba(5, 47, 95, 0.05);
     .card-header{
       color: $black;
       a[data-toggle="collapse"]{
