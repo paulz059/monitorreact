@@ -40,7 +40,7 @@ root.render(
             {({ signOut, user }) => (
               <BrowserRouter>
                 <Routes>
-                  <Route path="/admin/*" element={<AdminLayout />} />
+                  <Route path="/admin/*" element={<AdminLayout signOut={signOut} />} />
                   <Route path="/rtl/*" element={<RTLLayout />} />
                   <Route
                     path="*"

@@ -105,6 +105,7 @@ function Admin(props) {
             <AdminNavbar
               toggleSidebar={toggleSidebar}
               sidebarOpened={sidebarOpened}
+              signOut={props.signOut}
             />
             <Routes>
               {getRoutes(routes)}
