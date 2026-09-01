@@ -17,6 +17,8 @@ import {
   Alert
 } from "reactstrap";
 import { useLanguage } from "contexts/LanguageContext";
+import carbonIcon from "icon/leaf.png";
+import wasteIcon from "icon/recycle.png";
 
 const UNKNOWN_LAST_UPDATED = "__unknown__";
 
@@ -33,6 +35,9 @@ function MonitorDashboard() {
   const [lastUpdated, setLastUpdated] = useState("");
   const [selectedDevID, setSelectedDevID] = useState("");
   const [weightTrendDays, setWeightTrendDays] = useState("7");
+  const [weight1MonthHistory, setWeight1MonthHistory] = useState([]);
+  // eslint-disable-next-line no-unused-vars -- reserved for a future loading indicator on the WASTE DISPOSED cards
+  const [loadingWasteWindows, setLoadingWasteWindows] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -109,6 +114,20 @@ function MonitorDashboard() {
       setWeight2History(w2);
     };
     loadWeightSums();
+  }, [selectedDevID, fetchSensorHistory]);
+
+  // WASTE DISPOSED 三時間窗資料抓取 (weight1，本月1號至今+1天緩衝)
+  useEffect(() => {
+    const loadWasteWindows = async () => {
+      if (!selectedDevID) return;
+      setLoadingWasteWindows(true);
+      const now = new Date();
+      const daysSinceMonthStart = now.getDate();
+      const data = await fetchSensorHistory('weight1', (daysSinceMonthStart + 1).toString());
+      setWeight1MonthHistory(data);
+      setLoadingWasteWindows(false);
+    };
+    loadWasteWindows();
   }, [selectedDevID, fetchSensorHistory]);
 
   // Weight parameters are now retrieved from the latest device sensor reading directly
@@ -269,6 +288,40 @@ function MonitorDashboard() {
     return (parseFloat(latestWeight2) / 15).toFixed(2);
   }, [latestWeight2]);
 
+  const wasteDisposedWindows = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const firstOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000);
+
+    let last30Min = 0;
+    let today = 0;
+    let month = 0;
+
+    weight1MonthHistory.forEach(item => {
+      const parsedValue = parseFloat(item.value || 0);
+      if (!Number.isFinite(parsedValue)) return;
+      if (!item.timestamp) return;
+      const dateStr = item.timestamp.split('T')[0];
+
+      if (dateStr >= firstOfMonthStr && dateStr <= todayStr) {
+        month += parsedValue;
+      }
+      if (dateStr === todayStr) {
+        today += parsedValue;
+      }
+      if (new Date(item.timestamp) >= thirtyMinAgo) {
+        last30Min += parsedValue;
+      }
+    });
+
+    return {
+      last30Min: last30Min.toFixed(2),
+      today: today.toFixed(2),
+      month: month.toFixed(2),
+    };
+  }, [weight1MonthHistory]);
+
   const getAlertClass = (type, value) => {
     const val = parseFloat(value);
     if (type === "Temperature" && val > 37) return "card-warning-alert";
@@ -363,69 +416,190 @@ function MonitorDashboard() {
 
       {selectedDeviceData && (
         <>
-          {/* 第一區 WASTE PROCESSED */}
-          <h3 className="section-title">
-            <i className="tim-icons icon-delivery-fast mr-2" /> {t('monitorDashboard.wasteProcessed')}
-          </h3>
+          {/* CARBON PERFORMANCE */}
           <Row>
-            <Col lg="4" md="6">
-              <Card className="card-stats">
+            <Col xs="12">
+              <Card>
+                <CardHeader>
+                  <h3 className="section-title" style={{ marginTop: 0 }}>
+                    <img src={carbonIcon} alt="" className="mr-2" style={{ width: "20px", height: "20px", verticalAlign: "text-bottom" }} />
+                    {t('monitorDashboard.carbonPerformance')}
+                  </h3>
+                </CardHeader>
                 <CardBody>
                   <Row>
-                    <Col xs="5">
-                      <div className="info-icon text-center icon-success">
-                        <i className="tim-icons icon-delivery-fast" />
-                      </div>
+                    {/* LATEST REDUCTION */}
+                    <Col lg="6" md="6">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="4">
+                              <div className="info-icon text-center icon-danger">
+                                <i className="tim-icons icon-trash-simple" />
+                              </div>
+                            </Col>
+                            <Col xs="8">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.latestReduction')}</p>
+                                <CardTitle tag="h3">
+                                  {(() => {
+                                    const w1 = parseFloat(latestWeight1 || 0);
+                                    const w2 = parseFloat(latestWeight2 || 0);
+                                    const biomassOut = w2 / 15;
+                                    const reduction = (w1 * 1.5) + (biomassOut * 0.9635);
+                                    return reduction.toFixed(2);
+                                  })()} <small>KgCO2e</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
-                    <Col xs="7">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.todaysInput')}</p>
-                        <CardTitle tag="h3">
-                          {latestWeight1 !== undefined && latestWeight1 !== null ? parseFloat(latestWeight1).toFixed(2) : "--"} <small>kg</small>
-                        </CardTitle>
-                      </div>
+                    {/* TOTAL REDUCTION */}
+                    <Col lg="6" md="6">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="4">
+                              <div className="info-icon text-center icon-primary">
+                                <i className="tim-icons icon-chart-bar-32" />
+                              </div>
+                            </Col>
+                            <Col xs="8">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.totalReduction7Days')}</p>
+                                <CardTitle tag="h3">
+                                  {totalReduction7Days} <small>KgCO2e</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
                   </Row>
                 </CardBody>
               </Card>
             </Col>
-            <Col lg="4" md="6">
-              <Card className="card-stats">
+          </Row>
+
+          {/* 第一區 WASTE PROCESSED */}
+          <Row>
+            <Col xs="12">
+              <Card>
+                <CardHeader>
+                  <h3 className="section-title" style={{ marginTop: 0 }}>
+                    <img src={wasteIcon} alt="" className="mr-2" style={{ width: "20px", height: "20px", verticalAlign: "text-bottom" }} />
+                    {t('monitorDashboard.wasteProcessed')}
+                  </h3>
+                </CardHeader>
                 <CardBody>
                   <Row>
-                    <Col xs="5">
-                      <div className="info-icon text-center icon-primary">
-                        <i className="tim-icons icon-chart-pie-36" />
-                      </div>
+                    <Col lg="4" md="6">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="5">
+                              <div className="info-icon text-center icon-info">
+                                <i className="tim-icons icon-watch-time" />
+                              </div>
+                            </Col>
+                            <Col xs="7">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.wasteLast30Min')}</p>
+                                <CardTitle tag="h3">
+                                  {wasteDisposedWindows.last30Min} <small>kg</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
-                    <Col xs="7">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.currentBiomass')}</p>
-                        <CardTitle tag="h3">
-                          {latestWeight2 !== undefined && latestWeight2 !== null ? parseFloat(latestWeight2).toFixed(2) : "--"} <small>kg</small>
-                        </CardTitle>
-                      </div>
+                    <Col lg="4" md="6">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="5">
+                              <div className="info-icon text-center icon-success">
+                                <i className="tim-icons icon-delivery-fast" />
+                              </div>
+                            </Col>
+                            <Col xs="7">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.wasteToday')}</p>
+                                <CardTitle tag="h3">
+                                  {wasteDisposedWindows.today} <small>kg</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
-                  </Row>
-                </CardBody>
-              </Card>
-            </Col>
-            <Col lg="4" md="6">
-              <Card className="card-stats">
-                <CardBody>
-                  <Row>
-                    <Col xs="5">
-                      <div className="info-icon text-center icon-warning">
-                        <i className="tim-icons icon-coins" />
-                      </div>
+                    <Col lg="4" md="6">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="5">
+                              <div className="info-icon text-center icon-primary">
+                                <i className="tim-icons icon-calendar-60" />
+                              </div>
+                            </Col>
+                            <Col xs="7">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.wasteMonthTotal')}</p>
+                                <CardTitle tag="h3">
+                                  {wasteDisposedWindows.month} <small>kg</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
-                    <Col xs="7">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.biomassOutput')}</p>
-                        <CardTitle tag="h3">
-                          {biomassOutput} <small>kg</small>
-                        </CardTitle>
-                      </div>
+                    <Col lg="4" md="6">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="5">
+                              <div className="info-icon text-center icon-primary">
+                                <i className="tim-icons icon-chart-pie-36" />
+                              </div>
+                            </Col>
+                            <Col xs="7">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.currentBiomass')}</p>
+                                <CardTitle tag="h3">
+                                  {latestWeight2 !== undefined && latestWeight2 !== null ? parseFloat(latestWeight2).toFixed(2) : "--"} <small>kg</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
+                    </Col>
+                    <Col lg="4" md="6">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="5">
+                              <div className="info-icon text-center icon-warning">
+                                <i className="tim-icons icon-coins" />
+                              </div>
+                            </Col>
+                            <Col xs="7">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.biomassOutput')}</p>
+                                <CardTitle tag="h3">
+                                  {biomassOutput} <small>kg</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
                   </Row>
                 </CardBody>
@@ -434,137 +608,156 @@ function MonitorDashboard() {
           </Row>
 
           {/* 第2區 ENVIRONMENTAL SENSORS */}
-          <h3 className="section-title">
-            <i className="tim-icons icon-world mr-2" /> {t('monitorDashboard.environmentalSensors')}
-          </h3>
           <Row>
-            {/* CHAMBER TEMP */}
-            <Col lg="4" md="6">
-              <Card className={`card-stats ${getAlertClass("Temperature", selectedDeviceData.sensors.Temperature)}`}>
+            <Col xs="12">
+              <Card>
+                <CardHeader>
+                  <h3 className="section-title" style={{ marginTop: 0 }}>
+                    <i className="tim-icons icon-world mr-2" /> {t('monitorDashboard.environmentalSensors')}
+                  </h3>
+                </CardHeader>
                 <CardBody>
                   <Row>
-                    <Col xs="4">
-                      <div className="info-icon text-center icon-info">
-                        <i className="tim-icons icon-thermometer" />
-                      </div>
+                    {/* CHAMBER TEMP */}
+                    <Col lg="4" md="6">
+                      <Card className={`card-stats ${getAlertClass("Temperature", selectedDeviceData.sensors.Temperature)}`}>
+                        <CardBody>
+                          <Row>
+                            <Col xs="4">
+                              <div className="info-icon text-center icon-info">
+                                <i className="tim-icons icon-thermometer" />
+                              </div>
+                            </Col>
+                            <Col xs="8">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.chamberTemp')}</p>
+                                <CardTitle tag="h3">
+                                  {selectedDeviceData.sensors.Temperature ?? "--"} <small>°C</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
-                    <Col xs="8">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.chamberTemp')}</p>
-                        <CardTitle tag="h3">
-                          {selectedDeviceData.sensors.Temperature ?? "--"} <small>°C</small>
-                        </CardTitle>
-                      </div>
+                    {/* HUMIDITY */}
+                    <Col lg="4" md="6">
+                      <Card className={`card-stats ${getAlertClass("Humidity", selectedDeviceData.sensors.Humidity)}`}>
+                        <CardBody>
+                          <Row>
+                            <Col xs="4">
+                              <div className="info-icon text-center icon-info">
+                                <i className="tim-icons icon-drop-16" />
+                              </div>
+                            </Col>
+                            <Col xs="8">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.humidity')}</p>
+                                <CardTitle tag="h3">
+                                  {selectedDeviceData.sensors.Humidity ?? "--"} <small>%</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
+                    </Col>
+                    {/* CO2 & NH3 LEVEL */}
+                    <Col lg="4" md="6">
+                      {(() => {
+                        const co2Val = parseFloat(selectedDeviceData.sensors.CO2 ?? 0);
+                        const nh3Val = parseFloat(selectedDeviceData.sensors.NH3 ?? 0);
+                        const isAlert = co2Val > 5000 || nh3Val > 1000;
+                        return (
+                          <Card className={`card-stats ${isAlert ? "card-warning-alert" : ""}`}>
+                            <CardBody>
+                              <Row>
+                                <Col xs="4">
+                                  <div className="info-icon text-center icon-info">
+                                    <i className="tim-icons icon-molecule-40" />
+                                  </div>
+                                </Col>
+                                <Col xs="8">
+                                  <div className="numbers">
+                                    <p className="card-category">{t('monitorDashboard.co2Nh3Level')}</p>
+                                    <CardTitle tag="h3" style={{ fontSize: "1.2rem" }}>
+                                      {selectedDeviceData.sensors.CO2 ?? "--"} / {selectedDeviceData.sensors.NH3 ?? "--"} <small>ppm</small>
+                                    </CardTitle>
+                                  </div>
+                                </Col>
+                              </Row>
+                            </CardBody>
+                          </Card>
+                        );
+                      })()}
                     </Col>
                   </Row>
                 </CardBody>
               </Card>
-            </Col>
-            {/* HUMIDITY */}
-            <Col lg="4" md="6">
-              <Card className={`card-stats ${getAlertClass("Humidity", selectedDeviceData.sensors.Humidity)}`}>
-                <CardBody>
-                  <Row>
-                    <Col xs="4">
-                      <div className="info-icon text-center icon-info">
-                        <i className="tim-icons icon-drop-16" />
-                      </div>
-                    </Col>
-                    <Col xs="8">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.humidity')}</p>
-                        <CardTitle tag="h3">
-                          {selectedDeviceData.sensors.Humidity ?? "--"} <small>%</small>
-                        </CardTitle>
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-              </Card>
-            </Col>
-            {/* CO2 & NH3 LEVEL */}
-            <Col lg="4" md="6">
-              {(() => {
-                const co2Val = parseFloat(selectedDeviceData.sensors.CO2 ?? 0);
-                const nh3Val = parseFloat(selectedDeviceData.sensors.NH3 ?? 0);
-                const isAlert = co2Val > 5000 || nh3Val > 1000;
-                return (
-                  <Card className={`card-stats ${isAlert ? "card-warning-alert" : ""}`}>
-                    <CardBody>
-                      <Row>
-                        <Col xs="4">
-                          <div className="info-icon text-center icon-info">
-                            <i className="tim-icons icon-molecule-40" />
-                          </div>
-                        </Col>
-                        <Col xs="8">
-                          <div className="numbers">
-                            <p className="card-category">{t('monitorDashboard.co2Nh3Level')}</p>
-                            <CardTitle tag="h3" style={{ fontSize: "1.2rem" }}>
-                              {selectedDeviceData.sensors.CO2 ?? "--"} / {selectedDeviceData.sensors.NH3 ?? "--"} <small>ppm</small>
-                            </CardTitle>
-                          </div>
-                        </Col>
-                      </Row>
-                    </CardBody>
-                  </Card>
-                );
-              })()}
             </Col>
           </Row>
 
           {/* BIOMASS PERFORMANCE 幼蟲健康度 */}
-          <h3 className="section-title">
-            <i className="tim-icons icon-molecule-40 mr-2" /> {t('monitorDashboard.biomassPerformance')}
-          </h3>
           <Row>
-            <Col lg="6" md="8" xs="12">
+            <Col xs="12">
               <Card>
                 <CardHeader>
-                  <CardTitle tag="h4">{t('monitorDashboard.larvalGrowthStage')}</CardTitle>
+                  <h3 className="section-title" style={{ marginTop: 0 }}>
+                    <i className="tim-icons icon-molecule-40 mr-2" /> {t('monitorDashboard.biomassPerformance')}
+                  </h3>
                 </CardHeader>
                 <CardBody>
-                  <Table className="tablesorter">
-                    <thead className="bg-white">
-                      <tr>
-                        <th>{t('monitorDashboard.chamberTemp')}</th>
-                        <th>{t('monitorDashboard.humidity')}</th>
-                        <th>{t('monitorDashboard.growthStatusColumn')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const temp = parseFloat(selectedDeviceData.sensors.Temperature);
-                        const humidity = parseFloat(selectedDeviceData.sensors.Humidity);
-                        const isActive = temp >= 15 && temp <= 45 && humidity >= 35 && humidity <= 75;
-                        return (
-                          <tr>
-                            <td>{selectedDeviceData.sensors.Temperature ?? "--"} °C</td>
-                            <td>{selectedDeviceData.sensors.Humidity ?? "--"} %</td>
-                            <td>
-                              <Badge color={isActive ? "success" : "dark"}>
-                                {isActive ? t('monitorDashboard.statusActive') : t('monitorDashboard.statusInactive')}
-                              </Badge>
-                            </td>
-                          </tr>
-                        );
-                      })()}
-                    </tbody>
-                  </Table>
+                  <Row>
+                    <Col lg="6" md="8" xs="12">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle tag="h4">{t('monitorDashboard.larvalGrowthStage')}</CardTitle>
+                        </CardHeader>
+                        <CardBody>
+                          <Table className="tablesorter">
+                            <thead className="bg-white">
+                              <tr>
+                                <th>{t('monitorDashboard.chamberTemp')}</th>
+                                <th>{t('monitorDashboard.humidity')}</th>
+                                <th>{t('monitorDashboard.growthStatusColumn')}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const temp = parseFloat(selectedDeviceData.sensors.Temperature);
+                                const humidity = parseFloat(selectedDeviceData.sensors.Humidity);
+                                const isActive = temp >= 15 && temp <= 45 && humidity >= 35 && humidity <= 75;
+                                return (
+                                  <tr>
+                                    <td>{selectedDeviceData.sensors.Temperature ?? "--"} °C</td>
+                                    <td>{selectedDeviceData.sensors.Humidity ?? "--"} %</td>
+                                    <td>
+                                      <Badge color={isActive ? "success" : "dark"}>
+                                        {isActive ? t('monitorDashboard.statusActive') : t('monitorDashboard.statusInactive')}
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
+                            </tbody>
+                          </Table>
+                        </CardBody>
+                      </Card>
+                    </Col>
+                  </Row>
                 </CardBody>
               </Card>
             </Col>
           </Row>
 
           {/* SYSTEM STATUS 系統狀態 */}
-          <h3 className="section-title">
-            <i className="tim-icons icon-settings-gear-63 mr-2" /> {t('monitorDashboard.systemStatus')}
-          </h3>
           <Row>
             <Col xs="12">
               <Card>
                 <CardHeader>
-                  <CardTitle tag="h4">{t('monitorDashboard.systemStatus')}</CardTitle>
+                  <h3 className="section-title" style={{ marginTop: 0 }}>
+                    <i className="tim-icons icon-settings-gear-63 mr-2" /> {t('monitorDashboard.systemStatus')}
+                  </h3>
                 </CardHeader>
                 <CardBody>
                   <div className="table-responsive" style={{ overflowX: 'auto', overflowY: 'visible' }}>
@@ -572,7 +765,7 @@ function MonitorDashboard() {
                       <thead className="bg-white">
                         <tr>
                           {["TiltDetect", "RollMotor", "CBoardPD", "FanMotorIN", "FanMotorOUT", "rssi", "value"].map(id => (
-                            <th key={id}>{id}</th>
+                            <th key={id}>{t(`monitorDashboard.sensorLabels.${id}`)}</th>
                           ))}
                         </tr>
                       </thead>
@@ -591,106 +784,59 @@ function MonitorDashboard() {
           </Row>
 
           {/* 第3區 ENERGY MONITORING */}
-          <h3 className="section-title">
-            <i className="tim-icons icon-bolt-31 mr-2" /> {t('monitorDashboard.energyMonitoring')}
-          </h3>
           <Row>
-            {/* SYSTEM USAGE */}
-            <Col lg="6" md="6">
-              <Card className={`card-stats ${getAlertClass("ACMotor", selectedDeviceData.sensors.ACMotor)}`}>
+            <Col xs="12">
+              <Card>
+                <CardHeader>
+                  <h3 className="section-title" style={{ marginTop: 0 }}>
+                    <i className="tim-icons icon-bolt-31 mr-2" /> {t('monitorDashboard.energyMonitoring')}
+                  </h3>
+                </CardHeader>
                 <CardBody>
                   <Row>
-                    <Col xs="4">
-                      <div className="info-icon text-center icon-warning">
-                        <i className="tim-icons icon-bolt-31" />
-                      </div>
+                    {/* SYSTEM USAGE */}
+                    <Col lg="6" md="6">
+                      <Card className={`card-stats ${getAlertClass("ACMotor", selectedDeviceData.sensors.ACMotor)}`}>
+                        <CardBody>
+                          <Row>
+                            <Col xs="4">
+                              <div className="info-icon text-center icon-warning">
+                                <i className="tim-icons icon-bolt-31" />
+                              </div>
+                            </Col>
+                            <Col xs="8">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.systemUsage')}</p>
+                                <CardTitle tag="h3">
+                                  {selectedDeviceData.sensors.ACMotor ?? "--"} <small>kw</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
-                    <Col xs="8">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.systemUsage')}</p>
-                        <CardTitle tag="h3">
-                          {selectedDeviceData.sensors.ACMotor ?? "--"} <small>kw</small>
-                        </CardTitle>
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-              </Card>
-            </Col>
-            {/* SOLAR GENERATION */}
-            <Col lg="6" md="6">
-              <Card className={`card-stats ${getAlertClass("BatVoltage", selectedDeviceData.sensors.BatVoltage)}`}>
-                <CardBody>
-                  <Row>
-                    <Col xs="4">
-                      <div className="info-icon text-center icon-warning">
-                        <i className="tim-icons icon-sound-wave" />
-                      </div>
-                    </Col>
-                    <Col xs="8">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.solarGeneration')}</p>
-                        <CardTitle tag="h3">
-                          {selectedDeviceData.sensors.BatVoltage ?? "--"} <small>kw</small>
-                        </CardTitle>
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-              </Card>
-            </Col>
-          </Row>
-
-          {/* 第4區 REDUCTION */}
-          <h3 className="section-title">
-            <i className="tim-icons icon-trash-simple mr-2" /> {t('monitorDashboard.reduction')}
-          </h3>
-          <Row>
-            {/* LATEST REDUCTION */}
-            <Col lg="6" md="6">
-              <Card className="card-stats">
-                <CardBody>
-                  <Row>
-                    <Col xs="4">
-                      <div className="info-icon text-center icon-danger">
-                        <i className="tim-icons icon-trash-simple" />
-                      </div>
-                    </Col>
-                    <Col xs="8">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.latestReduction')}</p>
-                        <CardTitle tag="h3">
-                          {(() => {
-                            const w1 = parseFloat(latestWeight1 || 0);
-                            const w2 = parseFloat(latestWeight2 || 0);
-                            const biomassOut = w2 / 15;
-                            const reduction = (w1 * 1.5) + (biomassOut * 0.9635);
-                            return reduction.toFixed(2);
-                          })()} <small>kg</small>
-                        </CardTitle>
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-              </Card>
-            </Col>
-            {/* TOTAL REDUCTION */}
-            <Col lg="6" md="6">
-              <Card className="card-stats">
-                <CardBody>
-                  <Row>
-                    <Col xs="4">
-                      <div className="info-icon text-center icon-primary">
-                        <i className="tim-icons icon-chart-bar-32" />
-                      </div>
-                    </Col>
-                    <Col xs="8">
-                      <div className="numbers">
-                        <p className="card-category">{t('monitorDashboard.totalReduction7Days')}</p>
-                        <CardTitle tag="h3">
-                          {totalReduction7Days} <small>kg</small>
-                        </CardTitle>
-                      </div>
+                    {/* SOLAR GENERATION */}
+                    <Col lg="6" md="6">
+                      <Card className={`card-stats ${getAlertClass("BatVoltage", selectedDeviceData.sensors.BatVoltage)}`}>
+                        <CardBody>
+                          <Row>
+                            <Col xs="4">
+                              <div className="info-icon text-center icon-warning">
+                                <i className="tim-icons icon-sound-wave" />
+                              </div>
+                            </Col>
+                            <Col xs="8">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.solarGeneration')}</p>
+                                <CardTitle tag="h3">
+                                  {selectedDeviceData.sensors.BatVoltage ?? "--"} <small>kw</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
                     </Col>
                   </Row>
                 </CardBody>
