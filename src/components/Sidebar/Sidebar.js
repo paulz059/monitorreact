@@ -61,7 +61,6 @@ function Sidebar(props) {
   };
   const { routes, rtlActive, logo } = props;
   let logoImg = null;
-  let logoText = null;
   if (logo !== undefined) {
     if (logo.outterLink !== undefined) {
       logoImg = (
@@ -72,14 +71,9 @@ function Sidebar(props) {
           onClick={props.toggleSidebar}
         >
           <div className="logo-img">
-            <img src={logo.imgSrc} alt="react-logo" />
+            <img src={logo.imgSrc} alt="B-BOX logo" />
           </div>
         </a>
-      );
-      logoText = (
-        <div className="simple-text logo-normal">
-          {logo.text}
-        </div>
       );
     } else {
       logoImg = (
@@ -89,17 +83,8 @@ function Sidebar(props) {
           onClick={props.toggleSidebar}
         >
           <div className="logo-img">
-            <img src={logo.imgSrc} alt="react-logo" />
+            <img src={logo.imgSrc} alt="B-BOX logo" />
           </div>
-        </Link>
-      );
-      logoText = (
-        <Link
-          to={logo.innerLink}
-          className="simple-text logo-normal"
-          onClick={props.toggleSidebar}
-        >
-          {logo.text}
         </Link>
       );
     }
@@ -109,10 +94,9 @@ function Sidebar(props) {
       {({ color }) => (
         <div className="sidebar" data={color}>
           <div className="sidebar-wrapper" ref={sidebarRef}>
-            {logoImg !== null || logoText !== null ? (
+            {logoImg !== null ? (
               <div className="logo">
                 {logoImg}
-                {logoText}
               </div>
             ) : null}
             <Nav>

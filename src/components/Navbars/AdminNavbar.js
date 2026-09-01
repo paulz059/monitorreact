@@ -121,8 +121,8 @@ function AdminNavbar(props) {
                   <DropdownItem divider tag="li" />
                   <NavLink tag="li">
                     <DropdownItem className="nav-item" onClick={props.signOut}>
-                                          Log out
-                                        </DropdownItem>
+                      Log out
+                    </DropdownItem>
                   </NavLink>
                 </DropdownMenu>
               </UncontrolledDropdown>

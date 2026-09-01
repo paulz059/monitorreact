@@ -268,29 +268,19 @@
     position: relative;
     padding: $padding-base-vertical $padding-base-horizontal;
     z-index: 4;
-
-    a.logo-mini,
-    a.logo-normal{
-      @extend .animation-transition-general;
-    }
+    text-align: center;
 
     a.logo-mini{
+      @extend .animation-transition-general;
       opacity: 1;
-      float: left;
-      width: 34px;
+      display: inline-block;
+      width: 100%;
       text-align: center;
-      margin-left: 12px;
-      margin-right: 12px;
       img {
-        border-radius: 50%;
-        width: 30px;
+        width: 80%;
+        max-width: 160px;
+        height: auto;
       }
-    }
-
-    a.logo-normal{
-      display: block;
-      opacity: 1;
-      @include transform-translate-x(0px);
     }
 
     &:after{
@@ -502,13 +492,6 @@
       z-index: 1030;
       box-shadow: $sidebar-box-shadow;
 
-      .logo{
-        a.logo-normal{
-          opacity: 0;
-          @include transform-translate-x(-25px);
-        }
-      }
-
       .sidebar-wrapper{
         > .nav [data-toggle="collapse"] ~ div > ul > li > a .sidebar-normal,
         .user .info [data-toggle="collapse"] ~ div > ul > li > a .sidebar-normal,
@@ -526,14 +509,6 @@
 
     .sidebar:hover {
       width: 260px;
-
-      .logo {
-        a.logo-normal {
-          opacity: 1;
-          @include transform-translate-x(0);
-        }
-
-      }
 
       .navbar-minimize{
         opacity: 1;
