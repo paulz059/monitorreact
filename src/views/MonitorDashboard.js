@@ -31,7 +31,6 @@ function MonitorDashboard() {
   const [rawData, setRawData] = useState({}); 
   const [historyData, setHistoryData] = useState(null);
   const [weight1History, setWeight1History] = useState([]);
-  const [weight2History, setWeight2History] = useState([]);
   const [lastUpdated, setLastUpdated] = useState("");
   const [selectedDevID, setSelectedDevID] = useState("");
   const [weightTrendDays, setWeightTrendDays] = useState("7");
@@ -106,12 +105,8 @@ function MonitorDashboard() {
     const loadWeightSums = async () => {
       if (!selectedDevID) return;
       // 改為抓取 7 天以支援週圖表
-      const [w1, w2] = await Promise.all([
-        fetchSensorHistory('weight1', '7'),
-        fetchSensorHistory('weight2', '7')
-      ]);
+      const w1 = await fetchSensorHistory('weight1', '7');
       setWeight1History(w1);
-      setWeight2History(w2);
     };
     loadWeightSums();
   }, [selectedDevID, fetchSensorHistory]);
@@ -177,7 +172,7 @@ function MonitorDashboard() {
   }, [historyData, weightTrendDays]);
 
   const reductionChartData = useMemo(() => {
-    if (!weight1History || weight1History.length === 0 || !weight2History || weight2History.length === 0) {
+    if (!weight1History || weight1History.length === 0) {
       return {
         labels: [],
         datasets: [{
@@ -199,25 +194,12 @@ function MonitorDashboard() {
       return acc;
     }, {});
 
-    const weight2Daily = weight2History.reduce((acc, item) => {
-      const parsedValue = parseFloat(item.value || 0);
-      if (!Number.isFinite(parsedValue)) return acc;
-      const date = item.timestamp ? item.timestamp.split('T')[0] : (item.date || "Unknown");
-      if (!acc[date]) acc[date] = 0;
-      acc[date] += parsedValue;
-      return acc;
-    }, {});
-
-    const allDates = Array.from(new Set([
-      ...Object.keys(weight1Daily),
-      ...Object.keys(weight2Daily)
-    ])).sort();
+    const allDates = Object.keys(weight1Daily).sort();
 
     const values = allDates.map(date => {
-      const w1 = weight1Daily[date] || 0;
-      const w2 = weight2Daily[date] || 0;
-      const biomassOut = w2 / 15;
-      const reduction = (w1 * 1.5) + (biomassOut * 0.9635);
+      const wasteDisposed = weight1Daily[date] || 0;
+      const biomass = wasteDisposed / 15;
+      const reduction = (wasteDisposed * 1.5) + (biomass * 0.9635);
       return reduction.toFixed(2);
     });
 
@@ -232,9 +214,9 @@ function MonitorDashboard() {
         tension: 0.4
       }]
     };
-  }, [weight1History, weight2History]);
+  }, [weight1History]);
 
-  const totalReduction7Days = useMemo(() => {
+  const weeklyGhgReduction = useMemo(() => {
     if (!reductionChartData || !reductionChartData.datasets || reductionChartData.datasets[0].data.length === 0) {
       return "0.00";
     }
@@ -280,9 +262,6 @@ function MonitorDashboard() {
 
   const selectedDeviceData = devices.find(d => d.devID === selectedDevID);
 
-  const latestWeight1 = selectedDeviceData?.sensors?.weight1;
-  const latestWeight2 = selectedDeviceData?.sensors?.weight2;
-
   const wasteDisposedWindows = useMemo(() => {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -318,6 +297,13 @@ function MonitorDashboard() {
       monthBiomass: (month / 15).toFixed(2),
     };
   }, [weight1MonthHistory]);
+
+  const accumulatedGhgReduction = useMemo(() => {
+    const monthWasteDisposed = parseFloat(wasteDisposedWindows.month || 0);
+    const monthBiomass = parseFloat(wasteDisposedWindows.monthBiomass || 0);
+    const reduction = (monthWasteDisposed * 1.5) + (monthBiomass * 0.9635);
+    return reduction.toFixed(2);
+  }, [wasteDisposedWindows]);
 
   const getAlertClass = (type, value) => {
     const val = parseFloat(value);
@@ -425,8 +411,8 @@ function MonitorDashboard() {
                 </CardHeader>
                 <CardBody>
                   <Row>
-                    {/* LATEST REDUCTION */}
-                    <Col lg="6" md="6">
+                    {/* DAILY GHG REDUCTION */}
+                    <Col lg="4" md="4">
                       <Card className="card-stats">
                         <CardBody>
                           <Row>
@@ -437,13 +423,12 @@ function MonitorDashboard() {
                             </Col>
                             <Col xs="8">
                               <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.latestReduction')}</p>
+                                <p className="card-category">{t('monitorDashboard.dailyGhgReduction')}</p>
                                 <CardTitle tag="h3">
                                   {(() => {
-                                    const w1 = parseFloat(latestWeight1 || 0);
-                                    const w2 = parseFloat(latestWeight2 || 0);
-                                    const biomassOut = w2 / 15;
-                                    const reduction = (w1 * 1.5) + (biomassOut * 0.9635);
+                                    const wasteToday = parseFloat(wasteDisposedWindows.today || 0);
+                                    const biomassToday = parseFloat(wasteDisposedWindows.todayBiomass || 0);
+                                    const reduction = (wasteToday * 1.5) + (biomassToday * 0.9635);
                                     return reduction.toFixed(2);
                                   })()} <small>KgCO2e</small>
                                 </CardTitle>
@@ -453,8 +438,8 @@ function MonitorDashboard() {
                         </CardBody>
                       </Card>
                     </Col>
-                    {/* TOTAL REDUCTION */}
-                    <Col lg="6" md="6">
+                    {/* WEEKLY GHG REDUCTION */}
+                    <Col lg="4" md="4">
                       <Card className="card-stats">
                         <CardBody>
                           <Row>
@@ -465,9 +450,31 @@ function MonitorDashboard() {
                             </Col>
                             <Col xs="8">
                               <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.totalReduction7Days')}</p>
+                                <p className="card-category">{t('monitorDashboard.weeklyGhgReduction')}</p>
                                 <CardTitle tag="h3">
-                                  {totalReduction7Days} <small>KgCO2e</small>
+                                  {weeklyGhgReduction} <small>KgCO2e</small>
+                                </CardTitle>
+                              </div>
+                            </Col>
+                          </Row>
+                        </CardBody>
+                      </Card>
+                    </Col>
+                    {/* ACCUMULATED GHG REDUCTION */}
+                    <Col lg="4" md="4">
+                      <Card className="card-stats">
+                        <CardBody>
+                          <Row>
+                            <Col xs="4">
+                              <div className="info-icon text-center icon-success">
+                                <i className="tim-icons icon-chart-pie-36" />
+                              </div>
+                            </Col>
+                            <Col xs="8">
+                              <div className="numbers">
+                                <p className="card-category">{t('monitorDashboard.accumulatedGhgReduction')}</p>
+                                <CardTitle tag="h3">
+                                  {accumulatedGhgReduction} <small>KgCO2e</small>
                                 </CardTitle>
                               </div>
                             </Col>
