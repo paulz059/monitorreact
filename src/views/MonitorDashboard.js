@@ -283,11 +283,6 @@ function MonitorDashboard() {
   const latestWeight1 = selectedDeviceData?.sensors?.weight1;
   const latestWeight2 = selectedDeviceData?.sensors?.weight2;
 
-  const biomassOutput = useMemo(() => {
-    if (latestWeight2 === undefined || latestWeight2 === null) return "0.00";
-    return (parseFloat(latestWeight2) / 15).toFixed(2);
-  }, [latestWeight2]);
-
   const wasteDisposedWindows = useMemo(() => {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -319,6 +314,8 @@ function MonitorDashboard() {
       last30Min: last30Min.toFixed(2),
       today: today.toFixed(2),
       month: month.toFixed(2),
+      todayBiomass: (today / 15).toFixed(2),
+      monthBiomass: (month / 15).toFixed(2),
     };
   }, [weight1MonthHistory]);
 
@@ -570,9 +567,9 @@ function MonitorDashboard() {
                             </Col>
                             <Col xs="7">
                               <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.currentBiomass')}</p>
+                                <p className="card-category">{t('monitorDashboard.biomassToday')}</p>
                                 <CardTitle tag="h3">
-                                  {latestWeight2 !== undefined && latestWeight2 !== null ? parseFloat(latestWeight2).toFixed(2) : "--"} <small>kg</small>
+                                  {wasteDisposedWindows.todayBiomass} <small>kg</small>
                                 </CardTitle>
                               </div>
                             </Col>
@@ -591,9 +588,9 @@ function MonitorDashboard() {
                             </Col>
                             <Col xs="7">
                               <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.biomassOutput')}</p>
+                                <p className="card-category">{t('monitorDashboard.biomassTotal')}</p>
                                 <CardTitle tag="h3">
-                                  {biomassOutput} <small>kg</small>
+                                  {wasteDisposedWindows.monthBiomass} <small>kg</small>
                                 </CardTitle>
                               </div>
                             </Col>
