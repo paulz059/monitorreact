@@ -507,105 +507,60 @@ function MonitorDashboard() {
                     <Col lg="4" md="6">
                       <Card className="card-stats">
                         <CardBody>
-                          <Row>
-                            <Col xs="5">
-                              <div className="info-icon text-center icon-info">
-                                <i className="tim-icons icon-watch-time" />
-                              </div>
-                            </Col>
-                            <Col xs="7">
-                              <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.wasteLast30Min')}</p>
-                                <CardTitle tag="h3">
-                                  {wasteDisposedWindows.last30Min} <small>kg</small>
-                                </CardTitle>
-                              </div>
-                            </Col>
-                          </Row>
+                          <div className="numbers text-center">
+                            <p className="card-category">{t('monitorDashboard.wasteLast30Min')}</p>
+                            <CardTitle tag="h3">
+                              {wasteDisposedWindows.last30Min} <small>kg</small>
+                            </CardTitle>
+                          </div>
                         </CardBody>
                       </Card>
                     </Col>
                     <Col lg="4" md="6">
                       <Card className="card-stats">
                         <CardBody>
-                          <Row>
-                            <Col xs="5">
-                              <div className="info-icon text-center icon-success">
-                                <i className="tim-icons icon-delivery-fast" />
-                              </div>
-                            </Col>
-                            <Col xs="7">
-                              <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.wasteToday')}</p>
-                                <CardTitle tag="h3">
-                                  {wasteDisposedWindows.today} <small>kg</small>
-                                </CardTitle>
-                              </div>
-                            </Col>
-                          </Row>
+                          <div className="numbers text-center">
+                            <p className="card-category">{t('monitorDashboard.wasteToday')}</p>
+                            <CardTitle tag="h3">
+                              {wasteDisposedWindows.today} <small>kg</small>
+                            </CardTitle>
+                          </div>
                         </CardBody>
                       </Card>
                     </Col>
                     <Col lg="4" md="6">
                       <Card className="card-stats">
                         <CardBody>
-                          <Row>
-                            <Col xs="5">
-                              <div className="info-icon text-center icon-primary">
-                                <i className="tim-icons icon-calendar-60" />
-                              </div>
-                            </Col>
-                            <Col xs="7">
-                              <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.wasteMonthTotal')}</p>
-                                <CardTitle tag="h3">
-                                  {wasteDisposedWindows.month} <small>kg</small>
-                                </CardTitle>
-                              </div>
-                            </Col>
-                          </Row>
+                          <div className="numbers text-center">
+                            <p className="card-category">{t('monitorDashboard.wasteMonthTotal')}</p>
+                            <CardTitle tag="h3">
+                              {wasteDisposedWindows.month} <small>kg</small>
+                            </CardTitle>
+                          </div>
                         </CardBody>
                       </Card>
                     </Col>
                     <Col lg="4" md="6">
                       <Card className="card-stats">
                         <CardBody>
-                          <Row>
-                            <Col xs="5">
-                              <div className="info-icon text-center icon-primary">
-                                <i className="tim-icons icon-chart-pie-36" />
-                              </div>
-                            </Col>
-                            <Col xs="7">
-                              <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.biomassToday')}</p>
-                                <CardTitle tag="h3">
-                                  {wasteDisposedWindows.todayBiomass} <small>kg</small>
-                                </CardTitle>
-                              </div>
-                            </Col>
-                          </Row>
+                          <div className="numbers text-center">
+                            <p className="card-category">{t('monitorDashboard.biomassToday')}</p>
+                            <CardTitle tag="h3">
+                              {wasteDisposedWindows.todayBiomass} <small>kg</small>
+                            </CardTitle>
+                          </div>
                         </CardBody>
                       </Card>
                     </Col>
                     <Col lg="4" md="6">
                       <Card className="card-stats">
                         <CardBody>
-                          <Row>
-                            <Col xs="5">
-                              <div className="info-icon text-center icon-warning">
-                                <i className="tim-icons icon-coins" />
-                              </div>
-                            </Col>
-                            <Col xs="7">
-                              <div className="numbers">
-                                <p className="card-category">{t('monitorDashboard.biomassTotal')}</p>
-                                <CardTitle tag="h3">
-                                  {wasteDisposedWindows.monthBiomass} <small>kg</small>
-                                </CardTitle>
-                              </div>
-                            </Col>
-                          </Row>
+                          <div className="numbers text-center">
+                            <p className="card-category">{t('monitorDashboard.biomassTotal')}</p>
+                            <CardTitle tag="h3">
+                              {wasteDisposedWindows.monthBiomass} <small>kg</small>
+                            </CardTitle>
+                          </div>
                         </CardBody>
                       </Card>
                     </Col>
