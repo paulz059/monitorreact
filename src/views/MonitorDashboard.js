@@ -19,6 +19,10 @@ import {
 import { useLanguage } from "contexts/LanguageContext";
 import carbonIcon from "icon/leaf.png";
 import wasteIcon from "icon/recycle.png";
+import thermometerIcon from "icon/thermometer.png";
+import humidityIcon from "icon/humidity.png";
+import windIcon from "icon/wind-sign.png";
+import bsflIcon from "icon/open-box.png";
 
 const UNKNOWN_LAST_UPDATED = "__unknown__";
 
@@ -413,7 +417,7 @@ function MonitorDashboard() {
                   <Row>
                     {/* DAILY GHG REDUCTION */}
                     <Col lg="4" md="4">
-                      <Card className="card-stats">
+                      <Card className="card-stats h-100">
                         <CardBody>
                           <Row>
                             <Col xs="4">
@@ -440,7 +444,7 @@ function MonitorDashboard() {
                     </Col>
                     {/* WEEKLY GHG REDUCTION */}
                     <Col lg="4" md="4">
-                      <Card className="card-stats">
+                      <Card className="card-stats h-100">
                         <CardBody>
                           <Row>
                             <Col xs="4">
@@ -462,7 +466,7 @@ function MonitorDashboard() {
                     </Col>
                     {/* ACCUMULATED GHG REDUCTION */}
                     <Col lg="4" md="4">
-                      <Card className="card-stats">
+                      <Card className="card-stats h-100">
                         <CardBody>
                           <Row>
                             <Col xs="4">
@@ -629,7 +633,7 @@ function MonitorDashboard() {
                           <Row>
                             <Col xs="4">
                               <div className="info-icon text-center icon-info">
-                                <i className="tim-icons icon-thermometer" />
+                                <img src={thermometerIcon} alt="" style={{ width: "20px", height: "20px", verticalAlign: "middle" }} />
                               </div>
                             </Col>
                             <Col xs="8">
@@ -651,7 +655,7 @@ function MonitorDashboard() {
                           <Row>
                             <Col xs="4">
                               <div className="info-icon text-center icon-info">
-                                <i className="tim-icons icon-drop-16" />
+                                <img src={humidityIcon} alt="" style={{ width: "20px", height: "20px", verticalAlign: "middle" }} />
                               </div>
                             </Col>
                             <Col xs="8">
@@ -678,7 +682,7 @@ function MonitorDashboard() {
                               <Row>
                                 <Col xs="4">
                                   <div className="info-icon text-center icon-info">
-                                    <i className="tim-icons icon-molecule-40" />
+                                    <img src={windIcon} alt="" style={{ width: "20px", height: "20px", verticalAlign: "middle" }} />
                                   </div>
                                 </Col>
                                 <Col xs="8">
@@ -701,24 +705,24 @@ function MonitorDashboard() {
             </Col>
           </Row>
 
-          {/* BIOMASS PERFORMANCE 幼蟲健康度 */}
+          {/* BSFL HEALTHINESS 幼蟲健康度 */}
           <Row>
             <Col xs="12">
               <Card>
                 <CardHeader>
                   <h3 className="section-title" style={{ marginTop: 0 }}>
-                    <i className="tim-icons icon-molecule-40 mr-2" /> {t('monitorDashboard.biomassPerformance')}
+                    <img src={bsflIcon} alt="" className="mr-2" style={{ width: "20px", height: "20px", verticalAlign: "text-bottom" }} /> {t('monitorDashboard.biomassPerformance')}
                   </h3>
                 </CardHeader>
                 <CardBody>
                   <Row>
-                    <Col lg="6" md="8" xs="12">
+                    <Col xs="12">
                       <Card>
                         <CardHeader>
                           <CardTitle tag="h4">{t('monitorDashboard.larvalGrowthStage')}</CardTitle>
                         </CardHeader>
                         <CardBody>
-                          <Table className="tablesorter">
+                          <Table className="tablesorter" style={{ fontSize: "1.25rem" }}>
                             <thead className="bg-white">
                               <tr>
                                 <th>{t('monitorDashboard.chamberTemp')}</th>
@@ -736,7 +740,7 @@ function MonitorDashboard() {
                                     <td>{selectedDeviceData.sensors.Temperature ?? "--"} °C</td>
                                     <td>{selectedDeviceData.sensors.Humidity ?? "--"} %</td>
                                     <td>
-                                      <Badge color={isActive ? "success" : "dark"}>
+                                      <Badge color={isActive ? "success" : "secondary"} style={{ fontSize: "0.9rem" }}>
                                         {isActive ? t('monitorDashboard.statusActive') : t('monitorDashboard.statusInactive')}
                                       </Badge>
                                     </td>
@@ -834,7 +838,7 @@ function MonitorDashboard() {
                               <div className="numbers">
                                 <p className="card-category">{t('monitorDashboard.solarGeneration')}</p>
                                 <CardTitle tag="h3">
-                                  {selectedDeviceData.sensors.BatVoltage ?? "--"} <small>kw</small>
+                                  {selectedDeviceData.sensors.BatVoltage ?? "--"} <small>V</small>
                                 </CardTitle>
                               </div>
                             </Col>
@@ -1109,7 +1113,7 @@ function MonitorDashboard() {
                         </td>
                         <td>
                           {Object.entries(dev.sensors).slice(0, 3).map(([type, val], i) => (
-                            <Badge color="dark" key={i} className="mr-1">{type}: {val}</Badge>
+                            <Badge key={i} className="mr-1" style={{ backgroundColor: "#d6d6d6", color: "#000" }}>{type}: {val}</Badge>
                           ))}
                           {Object.keys(dev.sensors).length > 3 && <span className="text-muted">...</span>}
                         </td>

@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B-BOX DASH 監控平台</title>
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet.js 地圖 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js 圖表庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS (支援真實 XLSX/CSV 檔案匯出) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: #F1F5F8;
+      color: #052F5F;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* 左側選單漸層 */
+    .sidebar-dark-full-gradient {
+      background: linear-gradient(180deg, #052F5F 0%, #1D4363 50%, #0A192F 100%);
+      color: #FFFFFF;
+    }
+
+    /* 乾淨純白卡片 (主架構統一外框色系) */
+    .clean-card {
+      background: #FFFFFF;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(88, 147, 173, 0.25);
+      box-shadow: 0 4px 20px -2px rgba(5, 47, 95, 0.05);
+      transition: all 0.25s ease;
+    }
+    .clean-card:hover {
+      box-shadow: 0 10px 25px -5px rgba(5, 47, 95, 0.08);
+      border-color: #5893AD;
+    }
+
+    /* 主視覺：碳表現卡片 (大氣深色綠藍漸層) */
+    .hero-carbon-card {
+      background: linear-gradient(135deg, #052F5F 0%, #0D5C75 50%, #0A7A68 100%);
+      color: #FFFFFF;
+      border: 1px solid #10B981;
+      border-radius: 1.25rem;
+      box-shadow: 0 8px 30px rgba(10, 122, 104, 0.2);
+    }
+
+    /* 健康按鈕漸層 */
+    .badge-hero-gradient {
+      background: linear-gradient(135deg, #052F5F 0%, #0D5C75 50%, #0A7A68 100%);
+      color: #FFFFFF;
+      border: 1px solid #10B981;
+      box-shadow: 0 2px 8px rgba(10, 122, 104, 0.25);
+    }
+
+    /* 最下方「設備運行狀態紀錄」整體深色背景容器 */
+    .dark-history-card-container {
+      background: linear-gradient(135deg, #0A192F 0%, #0F2B48 50%, #071E3D 100%);
+      color: #FFFFFF;
+      border: 1px solid #3A7091;
+      border-radius: 1.25rem;
+      box-shadow: 0 10px 30px rgba(5, 47, 95, 0.25);
+    }
+
+    /* 下拉選單樣式 */
+    .select-default-style {
+      background-color: #EBF3F8;
+      color: #052F5F;
+      border: 1.5px solid #5893AD;
+      transition: all 0.2s ease;
+    }
+    .select-default-style:focus, .select-default-style:active {
+      background: linear-gradient(135deg, #5893AD 0%, #052F5F 100%);
+      color: #FFFFFF !important;
+      box-shadow: 0 4px 12px rgba(88, 147, 173, 0.3);
+    }
+    .select-default-style option {
+      background-color: #052F5F;
+      color: #FFFFFF;
+    }
+
+    /* 語言下拉選單專用樣式 */
+    .lang-select-style {
+      height: 2.5rem; /* 40px */
+      background-color: #FFFFFF;
+      color: #052F5F;
+      border: 1px solid #CBD5E1;
+      border-radius: 9999px;
+      padding: 0 1rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+    .lang-select-style:hover {
+      border-color: #5893AD;
+    }
+
+    /* 按鈕漸層 */
+    .btn-brand-gradient {
+      background: linear-gradient(135deg, #5893AD 0%, #052F5F 100%);
+      color: white !important;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(88, 147, 173, 0.3);
+    }
+    .btn-brand-gradient:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(88, 147, 173, 0.4);
+    }
+
+    /* 匯出按鈕綠色漸層 */
+    .btn-export-gradient {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: white !important;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-export-gradient:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    /* 統一字級與顏色規範 */
+    .text-section-title { 
+      font-size: 1.125rem; 
+      font-weight: 700; 
+      color: #052F5F; 
+    }
+    .text-item-label { 
+      font-size: 1rem; 
+      font-weight: 600; 
+      color: #052F5F; 
+    }
+    .text-metric-value { 
+      font-size: 2rem; 
+      font-weight: 700; 
+      color: #052F5F; 
+      font-family: 'JetBrains Mono', monospace; 
+    }
+
+    /* 燈號脈衝動畫 */
+    .pulse-active-green {
+      animation: active-green-pulse 1.8s infinite;
+    }
+    @keyframes active-green-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .pulse-caution-yellow {
+      animation: caution-yellow-pulse 1.6s infinite;
+    }
+    @keyframes caution-yellow-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+      70% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+
+    .pulse-offline-red {
+      animation: offline-red-pulse 1.4s infinite;
+    }
+    @keyframes offline-red-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* 自定義拉霸滾動條 */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 7px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #5893AD;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-6 min-h-screen flex justify-center items-center">
+
+  <div class="w-full max-w-7xl flex flex-col md:flex-row gap-6">
+
+    <!-- 左側選單 (點選切換分頁) -->
+    <aside class="w-full md:w-64 sidebar-dark-full-gradient rounded-2xl p-6 flex flex-col justify-between shrink-0 shadow-2xl">
+      <div>
+        <!-- 白色超大 LOGO -->
+        <div class="mb-5 flex justify-center py-4 border-b border-white/20">
+          <img src="https://lh3.googleusercontent.com/d/1RKPJO5YtKjfWD1IN8DA5izdWt3uOKpJy" alt="B-BOX White LOGO" class="h-32 md:h-36 w-auto object-contain drop-shadow-md" onerror="this.src='https://drive.google.com/thumbnail?id=1RKPJO5YtKjfWD1IN8DA5izdWt3uOKpJy&sz=w500'">
+        </div>
+
+        <nav class="space-y-3">
+          <!-- DASH 監控平台按鈕 -->
+          <button id="nav-btn-dashboard" onclick="switchMainTab('dashboard')" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl bg-white/15 text-white font-semibold border-l-4 border-[#10B981] shadow-sm backdrop-blur-md transition text-base text-left">
+            <i class="fa-solid fa-gauge-high text-xl text-emerald-300"></i> 
+            <span data-i18n="nav_dashboard">B-BOX DASH 監控平台</span>
+          </button>
+
+          <!-- RAW 資料按鈕 -->
+          <button id="nav-btn-raw" onclick="switchMainTab('raw')" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition text-base text-left">
+            <i class="fa-solid fa-database text-xl text-white/70"></i> 
+            <span data-i18n="nav_raw">RAW 資料</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="text-xs text-white/70 space-y-1.5 pt-6 border-t border-white/15">
+        <p class="font-bold hover:text-white transition text-sm">B-BOX / ABOUT US</p>
+        <p class="text-xs text-white/50">© 2026 made with ♡</p>
+      </div>
+    </aside>
+
+    <!-- 主內容區域 -->
+    <main class="flex-1 space-y-6">
+
+      <!-- 頂部功能列：語言選擇 + 使用者頭像 (可展開登出選單) -->
+      <div class="flex items-center justify-end bg-white px-6 py-2.5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-3">
+          
+          <!-- 語言選擇 -->
+          <div class="flex items-center">
+            <select id="lang-select" onchange="changeLanguage(this.value)" class="lang-select-style font-mono">
+              <option value="zh">繁體中文 (ZH)</option>
+              <option value="en">English (EN)</option>
+              <option value="fr">Français (FR)</option>
+            </select>
+          </div>
+
+          <!-- 使用者登入資訊 -->
+          <div class="relative">
+            <div onclick="toggleUserDropdown()" class="h-10 flex items-center gap-2.5 cursor-pointer px-3 rounded-full hover:bg-slate-50 transition border border-slate-200 bg-white" title="點擊展開帳戶選單">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=BBoxAdmin" alt="User Avatar" class="w-7 h-7 rounded-full border border-emerald-500 bg-white object-cover">
+              <span class="text-xs font-bold text-[#052F5F]">Admin User</span>
+              <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+            </div>
+
+            <!-- 登出下拉選單 -->
+            <div id="user-dropdown-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
+              <div class="px-4 py-2 border-b border-slate-100">
+                <p class="text-xs text-slate-400 font-semibold">登入身份</p>
+                <p class="text-sm font-bold text-[#052F5F] truncate">admin@bbox.io</p>
+              </div>
+              <button onclick="handleLogout()" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs text-rose-600 font-bold hover:bg-rose-50 transition">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> 登出系統
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- 分頁 1: DASH 監控平台 (儀表板首頁主頁面) -->
+      <!-- ========================================== -->
+      <div id="tab-dashboard-view" class="space-y-6">
+        
+        <!-- 頁頭資訊 (左側：標題/重新整理/最後更新/設備/狀態/設備座標 ； 右側：純地圖) -->
+        <header class="clean-card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div class="space-y-2.5 w-full md:w-auto">
+            
+            <h1 class="text-2xl md:text-3xl font-extrabold text-[#052F5F] tracking-tight flex items-center gap-2.5" data-i18n="header_title">
+              <i class="fa-solid fa-microchip text-emerald-600"></i> B-BOX DASH 監控平台
+            </h1>
+
+            <!-- 重新整理按鈕 (在最後更新上方) -->
+            <div>
+              <button onclick="refreshCurrentDevice()" class="btn-brand-gradient px-4 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-arrows-rotate"></i> <span data-i18n="btn_refresh">重新整理</span>
+              </button>
+            </div>
+
+            <!-- 最後更新 (24小時制 + 時區，顏色同為 #052F5F) -->
+            <p class="text-sm font-bold text-[#052F5F] flex items-center gap-2 font-mono">
+              <i class="fa-regular fa-clock text-[#052F5F]"></i>
+              <span data-i18n="last_update_prefix">最後更新：</span>
+              <span id="last-update-time">2026-08-13 21:17:21 GMT+0800</span>
+            </p>
+
+            <!-- 設備選擇 -->
+            <div class="flex items-center gap-3 pt-1">
+              <span class="font-bold text-base text-[#052F5F] flex items-center gap-1.5" data-i18n="select_device_label">
+                <i class="fa-solid fa-server text-emerald-600"></i> 設備：
+              </span>
+              <select id="device-selector" onchange="switchDevice(this.value)" class="select-default-style rounded-xl px-4 py-1.5 font-mono font-bold outline-none text-base cursor-pointer shadow-sm">
+                <option value="FoodWasteDecomposer000003">FoodWasteDecomposer000003</option>
+                <option value="FoodWasteDecomposer000006" selected>FoodWasteDecomposer000006</option>
+                <option value="FoodWasteDecomposer000007">FoodWasteDecomposer000007</option>
+                <option value="FoodWasteDecomposer000008">FoodWasteDecomposer000008</option>
+              </select>
+            </div>
+
+            <!-- 狀態 (位於設備下方) -->
+            <div class="flex items-center gap-3 pt-0.5">
+              <span class="font-bold text-base text-[#052F5F] flex items-center gap-1.5" data-i18n="device_status_title">
+                <i class="fa-solid fa-circle-info text-emerald-600"></i> 狀態：
+              </span>
+              <span id="quick-status-badge" class="px-3.5 py-1 rounded-full text-base font-extrabold bg-emerald-100 text-emerald-800 flex items-center gap-2 shadow-sm">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="quick-status-text" data-i18n="status_online_short">正常</span>
+              </span>
+            </div>
+
+            <!-- 設備座標定位 (顏色與最後更新相同 #052F5F，無綠框) -->
+            <div class="pt-0.5 flex items-center gap-2 text-sm font-bold text-[#052F5F] font-mono">
+              <i class="fa-solid fa-location-dot text-[#052F5F]"></i>
+              <span class="font-sans">設備座標定位：</span>
+              <span id="map-coords-text">25.0110° N, 121.4650° E</span>
+            </div>
+          </div>
+
+          <!-- 右方純地圖 -->
+          <div class="w-full md:w-80 shrink-0">
+            <a id="map-link" href="https://www.google.com/maps?q=25.011,121.465" target="_blank" title="點擊前往 Google Maps 查看" class="w-full aspect-video md:aspect-[16/10] rounded-2xl overflow-hidden shadow-sm border border-[#5893AD]/30 cursor-pointer block hover:border-[#5893AD] transition">
+              <div id="map" class="w-full h-full z-0"></div>
+            </a>
+          </div>
+        </header>
+
+        <!-- 碳表現指標：標題齊左、數字居中、單位齊右 (統一排列在數字下方) -->
+        <section class="hero-carbon-card p-6 shadow-xl relative overflow-hidden">
+          <div class="flex items-center justify-between mb-5 border-b border-white/20 pb-3">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-leaf text-2xl text-emerald-300"></i>
+              <div>
+                <h2 class="text-xl md:text-2xl font-extrabold tracking-wide text-white" data-i18n="hero_carbon_title">
+                  碳表現指標
+                </h2>
+              </div>
+            </div>
+            <span class="px-3.5 py-1 rounded-full text-xs font-extrabold bg-white/20 text-white border border-white/30 backdrop-blur-md">
+              <i class="fa-solid fa-shield-halved text-emerald-300"></i> ESG 認證
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 1. 當日累積減碳量 -->
+            <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/15 flex flex-col justify-between hover:bg-white/20 transition">
+              <div class="text-left">
+                <span class="text-base font-bold text-emerald-100 flex items-center gap-2" data-i18n="carbon_daily_title">
+                  <i class="fa-solid fa-cloud-arrow-down text-emerald-300"></i> 當日累積減碳量
+                </span>
+              </div>
+              <div class="my-2 text-center">
+                <span id="hero-daily-carbon" class="text-4xl lg:text-5xl font-extrabold font-mono text-white leading-none">55.20</span>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-sans text-emerald-200 font-bold tracking-wider">KgCO2e</span>
+              </div>
+            </div>
+
+            <!-- 2. 當月累積減碳量 -->
+            <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/15 flex flex-col justify-between hover:bg-white/20 transition">
+              <div class="text-left">
+                <span class="text-base font-bold text-emerald-100 flex items-center gap-2" data-i18n="carbon_monthly_title">
+                  <i class="fa-solid fa-earth-asia text-emerald-300"></i> 當月累積減碳量
+                </span>
+              </div>
+              <div class="my-2 text-center">
+                <span id="hero-monthly-carbon" class="text-4xl lg:text-5xl font-extrabold font-mono text-white leading-none">1,280.50</span>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-sans text-emerald-200 font-bold tracking-wider">KgCO2e</span>
+              </div>
+            </div>
+
+            <!-- 3. 當月累積已轉化有機質 -->
+            <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/15 flex flex-col justify-between hover:bg-white/20 transition">
+              <div class="text-left">
+                <span class="text-base font-bold text-emerald-100 flex items-center gap-2" data-i18n="organic_monthly_title">
+                  <i class="fa-solid fa-wheat-awn text-emerald-300"></i> 當月累積已轉化有機質
+                </span>
+              </div>
+              <div class="my-2 text-center">
+                <span id="hero-monthly-organic" class="text-4xl lg:text-5xl font-extrabold font-mono text-white leading-none">860.40</span>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-sans text-emerald-200 font-bold tracking-wider">Kg</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 今日已處理廢棄物：當日投入量 / 容器淨重 (純圖示，無外層方框) -->
+        <section>
+          <h2 class="text-section-title mb-3 pl-1 flex items-center gap-2">
+            <i class="fa-solid fa-recycle text-amber-600"></i> 
+            <span data-i18n="section_waste">今日已處理廢棄物</span>
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- 當日投入量 -->
+            <div class="clean-card p-6 flex justify-between items-center">
+              <div>
+                <span class="text-item-label block" data-i18n="waste_input_label">當日投入量</span>
+                <span id="val-weight1" class="text-metric-value mt-2 block">0.00 <small class="text-base font-normal font-sans text-slate-400">Kg</small></span>
+              </div>
+              <i class="fa-solid fa-utensils text-rose-500 text-3xl"></i>
+            </div>
+
+            <!-- 容器淨重 -->
+            <div class="clean-card p-6 flex justify-between items-center">
+              <div>
+                <span class="text-item-label block" data-i18n="waste_biomass_label">容器淨重</span>
+                <span id="val-weight2" class="text-metric-value mt-2 block">28.60 <small class="text-base font-normal font-sans text-slate-400">Kg</small></span>
+              </div>
+              <i class="fa-solid fa-scale-balanced text-amber-500 text-3xl"></i>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 環境感測數據 (四個子項目：統一字級大小與顏色) -->
+        <section class="clean-card p-6">
+          <h2 class="text-section-title mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-cloud-sun text-blue-600"></i> 
+            <span data-i18n="section_env">環境感測數據</span>
+          </h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            
+            <!-- 環境溫度 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between">
+              <span class="text-item-label flex items-center justify-center gap-2">
+                <i class="fa-solid fa-temperature-half text-rose-500"></i> 
+                <span data-i18n="env_temp_label">環境溫度</span>
+              </span>
+              <div id="val-env-temp" class="text-metric-value mt-2">28.5 <small class="text-base font-normal font-sans text-slate-500">°C</small></div>
+            </div>
+
+            <!-- 環境濕度 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between">
+              <span class="text-item-label flex items-center justify-center gap-2">
+                <i class="fa-solid fa-droplet text-blue-500"></i> 
+                <span data-i18n="env_humidity_label">環境濕度</span>
+              </span>
+              <div id="val-env-humidity" class="text-metric-value mt-2">62 <small class="text-base font-normal font-sans text-slate-500">%</small></div>
+            </div>
+
+            <!-- CO2 濃度 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between">
+              <span class="text-item-label flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wind text-teal-600"></i> 
+                <span data-i18n="env_co2_label">CO2 濃度</span>
+              </span>
+              <div id="val-co2" class="text-metric-value mt-2">633 <small class="text-base font-normal font-sans text-slate-500">ppm</small></div>
+            </div>
+
+            <!-- NH3 濃度 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between">
+              <span class="text-item-label flex items-center justify-center gap-2">
+                <i class="fa-solid fa-smog text-purple-600"></i> 
+                <span data-i18n="env_nh3_label">NH3 濃度</span>
+              </span>
+              <div id="val-nh3" class="text-metric-value mt-2">15 <small class="text-base font-normal font-sans text-slate-500">ppm</small></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 養殖感測數據 ＋ 蟲體健康分析 (外框統一同高，字體顏色一致，「健康」按鈕比照主視覺漸層) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+          
+          <!-- 養殖感測數據 (左側 1/3) -->
+          <div class="clean-card p-6 lg:col-span-1 flex flex-col justify-between">
+            <h2 class="text-section-title mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-box-open text-emerald-600"></i> 
+              <span data-i18n="section_chamber_sensor">養殖感測數據</span>
+            </h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-center h-full">
+              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between min-h-[110px]">
+                <span class="text-item-label flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-temperature-three-quarters text-rose-500"></i> 容器溫度
+                </span>
+                <div id="val-chamber-temp" class="text-metric-value mt-1">32 <small class="text-base font-normal font-sans text-slate-500">°C</small></div>
+              </div>
+
+              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between min-h-[110px]">
+                <span class="text-item-label flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-droplet text-blue-500"></i> 容器濕度
+                </span>
+                <div id="val-chamber-humidity" class="text-metric-value mt-1">68 <small class="text-base font-normal font-sans text-slate-500">%</small></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 蟲體健康分析 (右側 2/3：外框與主架構色系統一) -->
+          <div class="clean-card p-6 lg:col-span-2 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-4">
+                <h2 class="text-section-title flex items-center gap-2">
+                  <i class="fa-solid fa-worm text-emerald-600"></i> 
+                  <span data-i18n="section_larvae_analysis">蟲體健康分析</span>
+                </h2>
+                
+                <!-- 「健康」按鈕顏色比照主視覺漸層色 (badge-hero-gradient) -->
+                <span id="larvae-health-badge" class="px-4 py-1.5 rounded-full text-base font-extrabold flex items-center gap-2 shadow-sm badge-hero-gradient">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span> 
+                  <span id="larvae-health-badge-text">健康</span>
+                </span>
+              </div>
+
+              <!-- 四項文字分析：外框 min-h-[110px] 與左側同高，字體顏色相同 -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between min-h-[110px]">
+                  <span class="text-item-label flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-temperature-half text-rose-500"></i> 容器溫度
+                  </span>
+                  <div class="my-auto">
+                    <span id="larvae-stat-temp" class="text-metric-value text-[#052F5F]">正常</span>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between min-h-[110px]">
+                  <span class="text-item-label flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-droplet text-blue-500"></i> 容器濕度
+                  </span>
+                  <div class="my-auto">
+                    <span id="larvae-stat-humidity" class="text-metric-value text-[#052F5F]">正常</span>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between min-h-[110px]">
+                  <span class="text-item-label flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-wind text-teal-600"></i> CO2 濃度
+                  </span>
+                  <div class="my-auto">
+                    <span id="larvae-stat-co2" class="text-metric-value text-[#052F5F]">正常</span>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between min-h-[110px]">
+                  <span class="text-item-label flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-smog text-purple-600"></i> NH3 濃度
+                  </span>
+                  <div class="my-auto">
+                    <span id="larvae-stat-nh3" class="text-metric-value text-[#052F5F]">正常</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 系統狀態 (位置重排：第一列 進氣/翻堆/控制板/傾斜 ； 第二列 排氣/荷重/耗電/訊號 ； 正常值無方框無顏色) -->
+        <section class="clean-card p-6">
+          <h2 class="text-section-title mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-indigo-600"></i> 
+            <span data-i18n="section_system_status">系統狀態</span>
+          </h2>
+          
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center font-mono">
+            
+            <!-- 第一列 1: 進氣風扇 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-fan text-teal-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_fanin">進氣風扇</span>
+              </div>
+              <span class="font-bold text-[#052F5F] text-base"><span id="val-fanin">478</span> <small class="text-xs text-slate-500 font-sans">Wh</small></span>
+            </div>
+
+            <!-- 第一列 2: 翻堆馬達 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-gears text-blue-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_rollmotor">翻堆馬達</span>
+              </div>
+              <span class="font-bold text-[#052F5F] text-base"><span id="val-rollmotor">356</span> <small class="text-xs text-slate-500 font-sans">Wh</small></span>
+            </div>
+
+            <!-- 第一列 3: 控制板負載 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-microchip text-purple-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_cboardpd">控制板負載</span>
+              </div>
+              <span class="font-bold text-[#052F5F] text-base"><span id="val-cboardpd">487</span> <small class="text-xs text-slate-500 font-sans">Wh</small></span>
+            </div>
+
+            <!-- 第一列 4: 傾斜偵測 (正常「無」無方框無顏色) -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-compass text-rose-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_tilt">傾斜偵測</span>
+              </div>
+              <span id="sys-tilt-badge" class="font-bold text-[#052F5F] text-base">無</span>
+            </div>
+
+            <!-- 第二列 1: 排氣風扇 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-wind text-sky-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_fanout">排氣風扇</span>
+              </div>
+              <span class="font-bold text-[#052F5F] text-base"><span id="val-fanout">465</span> <small class="text-xs text-slate-500 font-sans">Wh</small></span>
+            </div>
+
+            <!-- 第二列 2: 荷重轉軸 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-arrows-spin text-orange-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_axis">荷重轉軸</span>
+              </div>
+              <span class="font-bold text-[#052F5F] text-base"><span id="val-axis">210</span> <small class="text-xs text-slate-500 font-sans">Wh</small></span>
+            </div>
+
+            <!-- 第二列 3: 耗電量 -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-bolt text-amber-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_power">耗電量</span>
+              </div>
+              <span class="font-bold text-[#052F5F] text-base"><span id="val-power">1.82</span> <small class="text-xs text-slate-500 font-sans">kW</small></span>
+            </div>
+
+            <!-- 第二列 4: 訊號偵測 (正常「正常」無方框無顏色) -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-wifi text-emerald-500 text-lg"></i>
+                <span class="text-item-label font-sans" data-i18n="status_signal">訊號偵測</span>
+              </div>
+              <span id="sys-signal-badge" class="font-bold text-[#052F5F] text-base">正常</span>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 減量分析 及 每日減排量 -->
+        <section>
+          <div class="flex justify-between items-center mb-3 px-1">
+            <h2 class="text-section-title flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-teal-600"></i> 
+              <span data-i18n="section_analysis">減量分析</span>
+            </h2>
+            <div class="flex gap-5 text-sm font-bold">
+              <span>
+                <span data-i18n="analysis_latest_weight">最新重量：</span>
+                <strong id="val-latest-weight" class="font-mono text-[#052F5F] text-base">1.84 kg</strong>
+              </span>
+              <span>
+                <span data-i18n="analysis_total_reduction">總減量（近 7 天）：</span>
+                <strong id="val-total-reduction" class="font-mono text-emerald-700 text-base">364.38 kg</strong>
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="clean-card p-6">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-item-label font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-weight-scale text-slate-600"></i> 容器重量趨勢
+                </span>
+                <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                  <button class="px-3 py-1 bg-white text-[#052F5F] rounded-lg shadow-sm font-extrabold" data-i18n="btn_7d">7 天</button>
+                  <button class="px-3 py-1 text-slate-500 hover:text-[#052F5F] transition" data-i18n="btn_15d">15 天</button>
+                  <button class="px-3 py-1 text-slate-500 hover:text-[#052F5F] transition" data-i18n="btn_30d">30 天</button>
+                </div>
+              </div>
+              <div class="h-48"><canvas id="chartWeight"></canvas></div>
+            </div>
+
+            <!-- 外框與主架構完全統一 clean-card -->
+            <div class="clean-card p-6">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-item-label font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-leaf text-emerald-600"></i> 
+                  <span data-i18n="chart_carbon_reduction">每日減排量（近 7 天）</span>
+                </span>
+              </div>
+              <div class="h-48"><canvas id="chartCarbon"></canvas></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 設備運行狀態紀錄 (左側：縮小至 70% 比例約 h-44 乾淨精緻呈現 ； 右側：完整顯示歷史數據) -->
+        <section class="dark-history-card-container p-6 shadow-xl">
+          <h2 class="text-xl font-extrabold text-white mb-5 flex items-center justify-between border-b border-white/15 pb-3">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-clipboard-check text-emerald-400"></i> 
+              <span data-i18n="section_device_history_title">設備運行狀態紀錄</span>
+            </span>
+            <span id="health-device-id-text" class="text-xs text-emerald-200 font-mono font-bold bg-white/10 px-3 py-1 rounded-lg border border-white/10">FoodWasteDecomposer000006</span>
+          </h2>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            
+            <!-- 左側 1/3：當前整體概況 (圖片縮小 70% 比例為 h-44/176px，精緻平衡) -->
+            <div class="bg-white/10 rounded-2xl p-5 flex flex-col justify-between items-center border border-white/15 backdrop-blur-md">
+              <div class="w-full flex items-center justify-between border-b border-white/10 pb-2.5">
+                <span class="text-sm font-bold text-white flex items-center gap-2">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i> 當前整體概況
+                </span>
+                <span id="health-badge" class="px-4 py-1 rounded-full text-sm font-black bg-emerald-500 text-white shadow-sm">正常</span>
+              </div>
+
+              <!-- 圖片縮小 70% 比例呈現 (高度為 h-44 / 176px)，乾淨不突兀 -->
+              <div class="my-2.5 w-full h-44 rounded-xl overflow-hidden border border-white/20 bg-slate-900/60 flex items-center justify-center p-2.5 shadow-inner">
+                <img src="https://lh3.googleusercontent.com/d/11hCeMWASbIODhgbr1I126ZXSqvaZl6pc" alt="B-BOX 最新設備實體圖片" class="max-h-full max-w-full object-contain rounded-lg drop-shadow-md hover:scale-105 transition duration-300" onerror="this.src='https://lh3.googleusercontent.com/d/1TqvSbwJq6ZH7SQmvFW-tnl0PKezIH-EN'">
+              </div>
+            </div>
+
+            <!-- 右側 2/3：設備歷史檢測紀錄數據列表 -->
+            <div class="lg:col-span-2 bg-white/10 rounded-2xl p-5 border border-white/15 backdrop-blur-md flex flex-col justify-between">
+              <div class="flex justify-between items-center mb-3 px-2 text-sm text-white font-bold border-b border-white/15 pb-2">
+                <span class="flex items-center gap-2"><i class="fa-regular fa-calendar-check text-emerald-400"></i> 檢測時間戳記 (由新至舊)</span>
+                <span>狀態判定</span>
+              </div>
+              <div id="device-history-container" class="h-44 overflow-y-auto pr-2 space-y-2.5 custom-scrollbar font-mono text-sm">
+                <!-- JS 動態渲染歷史項目 -->
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- 分頁 2: RAW 資料查詢分頁 (白底純淨設計 + CSV/XLSX 匯出功能) -->
+      <!-- ========================================== -->
+      <div id="tab-raw-view" class="hidden space-y-6">
+        
+        <!-- RAW 頁頭 -->
+        <header class="clean-card p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">RAW DATA QUERY</div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-[#052F5F] tracking-tight flex items-center gap-2.5">
+              <i class="fa-solid fa-database text-emerald-600"></i> 原始資料查詢 (Raw JSON)
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">檢視與匯出從資料庫傳回的原始感測器與設備遙測 JSON 封包數據</p>
+          </div>
+
+          <!-- 功能操作按鈕群組：重新整理 + 2. 匯出按鈕 (CSV / XLSX) -->
+          <div class="flex items-center gap-3">
+            
+            <button onclick="renderRawDataTab()" class="btn-brand-gradient px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2 shadow-sm">
+              <i class="fa-solid fa-arrows-rotate"></i> 重新整理
+            </button>
+
+            <!-- 2. 匯出按鈕下拉選單 (CSV / XLSX) -->
+            <div class="relative">
+              <button onclick="toggleExportDropdown()" class="btn-export-gradient px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2 shadow-sm" title="選擇匯出格式">
+                <i class="fa-solid fa-file-export"></i> 匯出資料 <i class="fa-solid fa-chevron-down text-xs"></i>
+              </button>
+
+              <!-- 匯出格式選單 -->
+              <div id="export-dropdown-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50">
+                <button onclick="exportRawData('csv')" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition">
+                  <i class="fa-solid fa-file-csv text-emerald-600 text-lg"></i> 匯出 CSV 格式 (.csv)
+                </button>
+                <button onclick="exportRawData('xlsx')" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition">
+                  <i class="fa-solid fa-file-excel text-emerald-600 text-lg"></i> 匯出 Excel 格式 (.xlsx)
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </header>
+
+        <!-- 工具列：選擇設備 & 資料總筆數 -->
+        <div class="clean-card p-5 flex flex-wrap justify-between items-center gap-4">
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-sm text-[#052F5F]">選擇設備 (devID)：</span>
+            <select id="raw-device-selector" onchange="switchRawDevice(this.value)" class="select-default-style rounded-xl px-4 py-1.5 font-mono font-bold outline-none text-sm cursor-pointer shadow-sm">
+              <option value="FoodWasteDecomposer000003">FoodWasteDecomposer000003</option>
+              <option value="FoodWasteDecomposer000006" selected>FoodWasteDecomposer000006</option>
+              <option value="FoodWasteDecomposer000007">FoodWasteDecomposer000007</option>
+              <option value="FoodWasteDecomposer000008">FoodWasteDecomposer000008</option>
+            </select>
+          </div>
+
+          <div class="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+            總資料量：<span id="raw-total-count" class="text-emerald-600 font-black">0</span> 筆
+          </div>
+        </div>
+
+        <!-- RAW JSON 卡片列表容器 -->
+        <div id="raw-data-card-list" class="space-y-4">
+          <!-- JS 動態生成白底純淨設計的 JSON 卡片 -->
+        </div>
+
+        <!-- 分頁控制列 (Pagination) -->
+        <div class="clean-card p-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-medium">
+          <div class="flex items-center gap-2 text-slate-600">
+            <span>每頁顯示：</span>
+            <select id="raw-page-size" onchange="changeRawPageSize(this.value)" class="select-default-style rounded-lg px-2.5 py-1 text-xs font-bold font-mono outline-none">
+              <option value="3">3 筆</option>
+              <option value="5" selected>5 筆</option>
+              <option value="10">10 筆</option>
+            </select>
+            <span id="raw-page-range-info" class="text-xs text-slate-400 font-mono ml-2">顯示第 1 - 5 筆</span>
+          </div>
+
+          <!-- 分頁按鈕 -->
+          <div class="flex items-center gap-2 font-mono">
+            <button id="raw-prev-btn" onclick="prevRawPage()" class="px-3.5 py-1 rounded-lg border border-slate-300 text-slate-600 font-bold hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              <i class="fa-solid fa-chevron-left text-xs mr-1"></i> 上一頁
+            </button>
+            
+            <div id="raw-pagination-numbers" class="flex items-center gap-1">
+              <!-- 動態生成數字頁碼 -->
+            </div>
+
+            <button id="raw-next-btn" onclick="nextRawPage()" class="px-3.5 py-1 rounded-lg border border-slate-300 text-slate-600 font-bold hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              下一頁 <i class="fa-solid fa-chevron-right text-xs ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JavaScript 與資料連動邏輯 -->
+  <script>
+    let currentLang = 'zh';
+    let currentDevice = 'FoodWasteDecomposer000006';
+    let chartWeightInstance, chartCarbonInstance;
+    let leafletMap, mapMarker;
+
+    // 分頁切換 (DASH vs RAW)
+    function switchMainTab(tab) {
+      const dashView = document.getElementById('tab-dashboard-view');
+      const rawView = document.getElementById('tab-raw-view');
+      const navDash = document.getElementById('nav-btn-dashboard');
+      const navRaw = document.getElementById('nav-btn-raw');
+
+      if (tab === 'dashboard') {
+        dashView.classList.remove('hidden');
+        rawView.classList.add('hidden');
+        navDash.className = "w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl bg-white/15 text-white font-semibold border-l-4 border-[#10B981] shadow-sm backdrop-blur-md transition text-base text-left";
+        navRaw.className = "w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition text-base text-left";
+        setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 200);
+      } else {
+        dashView.classList.add('hidden');
+        rawView.classList.remove('hidden');
+        navRaw.className = "w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl bg-white/15 text-white font-semibold border-l-4 border-[#10B981] shadow-sm backdrop-blur-md transition text-base text-left";
+        navDash.className = "w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition text-base text-left";
+        renderRawDataTab();
+      }
+    }
+
+    function toggleUserDropdown() {
+      const menu = document.getElementById('user-dropdown-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function toggleExportDropdown() {
+      const menu = document.getElementById('export-dropdown-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    window.addEventListener('click', function(e) {
+      const userBtn = e.target.closest('[title="點擊展開帳戶選單"]');
+      const userMenu = document.getElementById('user-dropdown-menu');
+      if (!userBtn && userMenu && !userMenu.classList.contains('hidden')) {
+        userMenu.classList.add('hidden');
+      }
+
+      const exportBtn = e.target.closest('[title="選擇匯出格式"]');
+      const exportMenu = document.getElementById('export-dropdown-menu');
+      if (!exportBtn && exportMenu && !exportMenu.classList.contains('hidden')) {
+        exportMenu.classList.add('hidden');
+      }
+    });
+
+    function handleLogout() {
+      if (confirm('確定要登出 B-BOX 監控平台嗎？')) {
+        alert('您已成功安全登出！');
+      }
+    }
+
+    function formatCoords(lat, lng) {
+      const latStr = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}`;
+      const lngStr = `${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`;
+      return `${latStr}, ${lngStr}`;
+    }
+
+    // 完整設備資料庫
+    const deviceDatabase = {
+      'FoodWasteDecomposer000003': {
+        state: 'offline',
+        statusShortZh: '停機',
+        statusShortEn: 'Offline',
+        statusShortFr: 'Arrêt',
+        locationName: { zh: '比利時·布魯塞爾', en: 'Brussels, Belgium', fr: 'Bruxelles, Belgique' },
+        coords: [50.8503, 4.3517],
+        updateTime: '2026-08-13 15:30:12 GMT+0200',
+        dailyCarbon: '0.00',
+        monthlyCarbon: '320.10',
+        monthlyOrganic: '210.00',
+        weight1: '--',
+        weight2: '14.90',
+        envTemp: '22.0',
+        envHumidity: '48',
+        co2: '--',
+        nh3: '--',
+        chamberTemp: '24',
+        chamberHumidity: '52',
+        larvaeOverall: 'attention',
+        larvaeTemp: '偏低',
+        larvaeHumidity: '偏低',
+        larvaeCo2: '正常',
+        larvaeNh3: '正常',
+        tilt: '無',
+        rollmotor: '0',
+        cboardpd: '10',
+        fanin: '0',
+        fanout: '0',
+        axis: '0',
+        power: '0.00',
+        signal: '離線',
+        history: [
+          { time: '2026/08/19 00:00:00', status: '停機', state: 'offline' },
+          { time: '2026/08/18 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/15 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/13 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/10 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/07 00:00:00', status: '正常', state: 'normal' }
+        ],
+        weightChartData: [14.9, 14.9, 14.9, 14.9, 14.9, 14.9, 14.9],
+        carbonChartData: [0, 0, 0, 0, 0, 0, 0]
+      },
+
+      'FoodWasteDecomposer000006': {
+        state: 'normal',
+        statusShortZh: '正常',
+        statusShortEn: 'Normal',
+        statusShortFr: 'Normal',
+        locationName: { zh: '台灣·新北板橋', en: 'Banqiao, Taiwan', fr: 'Banqiao, Taïwan' },
+        coords: [25.011, 121.465],
+        updateTime: '2026-08-13 21:17:21 GMT+0800',
+        dailyCarbon: '55.20',
+        monthlyCarbon: '1,280.50',
+        monthlyOrganic: '860.40',
+        weight1: '0.00',
+        weight2: '28.60',
+        envTemp: '28.5',
+        envHumidity: '62',
+        co2: '633',
+        nh3: '15',
+        chamberTemp: '32',
+        chamberHumidity: '68',
+        larvaeOverall: 'healthy',
+        larvaeTemp: '正常',
+        larvaeHumidity: '正常',
+        larvaeCo2: '正常',
+        larvaeNh3: '正常',
+        tilt: '無',
+        rollmotor: '356',
+        cboardpd: '487',
+        fanin: '478',
+        fanout: '465',
+        axis: '210',
+        power: '1.82',
+        signal: '正常',
+        history: [
+          { time: '2026/08/19 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/18 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/15 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/13 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/10 00:00:00', status: '正常', state: 'normal' }
+        ],
+        weightChartData: [8.0, 7.5, 7.8, 9.2, 11.0, 13.5, 15.5],
+        carbonChartData: [190, 110, 95, 80, 70, 62, 55]
+      },
+
+      'FoodWasteDecomposer000007': {
+        state: 'caution',
+        statusShortZh: '注意',
+        statusShortEn: 'Caution',
+        statusShortFr: 'Attention',
+        locationName: { zh: '台灣·新北中和', en: 'Zhonghe, Taiwan', fr: 'Zhonghe, Taïwan' },
+        coords: [25.003, 121.503],
+        updateTime: '2026-08-13 21:18:45 GMT+0800',
+        dailyCarbon: '32.10',
+        monthlyCarbon: '940.20',
+        monthlyOrganic: '620.00',
+        weight1: '2.10',
+        weight2: '31.20',
+        envTemp: '29.0',
+        envHumidity: '75',
+        co2: '790',
+        nh3: '26',
+        chamberTemp: '33',
+        chamberHumidity: '82',
+        larvaeOverall: 'attention',
+        larvaeTemp: '正常',
+        larvaeHumidity: '偏高',
+        larvaeCo2: '正常',
+        larvaeNh3: '正常',
+        tilt: '無',
+        rollmotor: '420',
+        cboardpd: '550',
+        fanin: '495',
+        fanout: '490',
+        axis: '240',
+        power: '2.15',
+        signal: '弱',
+        history: [
+          { time: '2026/08/19 00:00:00', status: '注意', state: 'caution' },
+          { time: '2026/08/18 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/15 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/13 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/11 00:00:00', status: '正常', state: 'normal' }
+        ],
+        weightChartData: [10.0, 10.5, 12.0, 14.5, 17.8, 22.0, 26.8],
+        carbonChartData: [140, 120, 105, 90, 78, 70, 60]
+      },
+
+      'FoodWasteDecomposer000008': {
+        state: 'caution',
+        statusShortZh: '注意',
+        statusShortEn: 'Caution',
+        statusShortFr: 'Attention',
+        locationName: { zh: '香港·沙田科學園', en: 'Sha Tin, Hong Kong', fr: 'Sha Tin, Hong Kong' },
+        coords: [22.427, 114.211],
+        updateTime: '2026-08-13 21:20:50 GMT+0800',
+        dailyCarbon: '21.50',
+        monthlyCarbon: '780.00',
+        monthlyOrganic: '510.00',
+        weight1: '5.20',
+        weight2: '34.80',
+        envTemp: '31.0',
+        envHumidity: '70',
+        co2: '850',
+        nh3: '30',
+        chamberTemp: '38',
+        chamberHumidity: '74',
+        larvaeOverall: 'attention',
+        larvaeTemp: '偏高',
+        larvaeHumidity: '正常',
+        larvaeCo2: '偏高',
+        larvaeNh3: '正常',
+        tilt: '有',
+        rollmotor: '520',
+        cboardpd: '620',
+        fanin: '120',
+        fanout: '110',
+        axis: '310',
+        power: '2.40',
+        signal: '正常',
+        history: [
+          { time: '2026/08/19 00:00:00', status: '注意', state: 'caution' },
+          { time: '2026/08/18 00:00:00', status: '注意', state: 'caution' },
+          { time: '2026/08/15 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/13 00:00:00', status: '正常', state: 'normal' },
+          { time: '2026/08/09 00:00:00', status: '正常', state: 'normal' }
+        ],
+        weightChartData: [12.0, 13.0, 15.5, 18.0, 21.5, 25.2, 29.8],
+        carbonChartData: [90, 80, 70, 60, 50, 45, 38]
+      }
+    };
+
+    const i18n = {
+      zh: {
+        nav_dashboard: "B-BOX DASH 監控平台",
+        nav_raw: "RAW 資料",
+        header_title: "B-BOX DASH 監控平台",
+        last_update_prefix: "最後更新：",
+        select_device_label: "設備：",
+        device_status_title: "狀態：",
+        btn_refresh: "重新整理",
+        hero_carbon_title: "碳表現指標",
+        carbon_daily_title: "當日累積減碳量",
+        carbon_monthly_title: "當月累積減碳量",
+        organic_monthly_title: "當月累積已轉化有機質",
+        section_waste: "今日已處理廢棄物",
+        waste_input_label: "當日投入量",
+        waste_biomass_label: "容器淨重",
+        section_env: "環境感測數據",
+        env_temp_label: "環境溫度",
+        env_humidity_label: "環境濕度",
+        env_co2_label: "CO2 濃度",
+        env_nh3_label: "NH3 濃度",
+        section_chamber_sensor: "養殖感測數據",
+        section_larvae_analysis: "蟲體健康分析",
+        section_system_status: "系統狀態",
+        status_tilt: "傾斜偵測",
+        status_rollmotor: "翻堆馬達",
+        status_cboardpd: "控制板負載",
+        status_fanin: "進氣風扇",
+        status_fanout: "排氣風扇",
+        status_axis: "荷重轉軸",
+        status_power: "耗電量",
+        status_signal: "訊號偵測",
+        section_analysis: "減量分析",
+        analysis_latest_weight: "最新重量：",
+        analysis_total_reduction: "總減量（近 7 天）：",
+        chart_weight_trend: "容器重量趨勢",
+        chart_carbon_reduction: "每日減排量（近 7 天）",
+        btn_7d: "7 天",
+        btn_15d: "15 天",
+        btn_30d: "30 天",
+        section_device_history_title: "設備運行狀態紀錄",
+        status_online_short: "正常",
+        status_caution_short: "注意",
+        status_offline_short: "停機"
+      },
+      en: {
+        nav_dashboard: "B-BOX DASH Dashboard",
+        nav_raw: "RAW Data",
+        header_title: "B-BOX DASH Dashboard",
+        last_update_prefix: "Last Updated: ",
+        select_device_label: "Device: ",
+        device_status_title: "Status: ",
+        btn_refresh: "Refresh",
+        hero_carbon_title: "Carbon Performance",
+        carbon_daily_title: "Daily Carbon Reduction",
+        carbon_monthly_title: "Monthly Carbon Reduction",
+        organic_monthly_title: "Monthly Converted Organics",
+        section_waste: "Today Waste Processed",
+        waste_input_label: "Daily Waste Input",
+        waste_biomass_label: "Chamber Net Weight",
+        section_env: "Environmental Sensors",
+        env_temp_label: "Ambient Temp",
+        env_humidity_label: "Ambient Humidity",
+        env_co2_label: "CO2 Level",
+        env_nh3_label: "NH3 Level",
+        section_chamber_sensor: "Breeding Sensors",
+        section_larvae_analysis: "Larval Health Analysis",
+        section_system_status: "System Status",
+        status_tilt: "Tilt Detect",
+        status_rollmotor: "Roll Motor",
+        status_cboardpd: "Board Load",
+        status_fanin: "Intake Fan",
+        status_fanout: "Exhaust Fan",
+        status_axis: "Load Axis",
+        status_power: "Power Usage",
+        status_signal: "Signal Status",
+        section_analysis: "Reduction Analytics",
+        analysis_latest_weight: "Latest Weight: ",
+        analysis_total_reduction: "Total Reduction (7D): ",
+        chart_weight_trend: "Weight Trend",
+        chart_carbon_reduction: "Daily Carbon Reduction (7D)",
+        btn_7d: "7 Days",
+        btn_15d: "15 Days",
+        btn_30d: "30 Days",
+        section_device_history_title: "Device Operation Logs",
+        status_online_short: "Normal",
+        status_caution_short: "Caution",
+        status_offline_short: "Offline"
+      },
+      fr: {
+        nav_dashboard: "B-BOX DASH Dashboard",
+        nav_raw: "Données Brutes",
+        header_title: "B-BOX DASH Dashboard",
+        last_update_prefix: "Dernière mise à jour : ",
+        select_device_label: "Appareil : ",
+        device_status_title: "Statut : ",
+        btn_refresh: "Actualiser",
+        hero_carbon_title: "Performance Carbone",
+        carbon_daily_title: "Réduction Carbone du Jour",
+        carbon_monthly_title: "Réduction Carbone du Mois",
+        organic_monthly_title: "Matière Convertie du Mois",
+        section_waste: "Déchets Traités Aujourd'hui",
+        waste_input_label: "Apport du jour",
+        waste_biomass_label: "Poids net cuve",
+        section_env: "Capteurs Environnementaux",
+        env_temp_label: "Temp. Ambiante",
+        env_humidity_label: "Humidité Ambiante",
+        env_co2_label: "Niveau CO2",
+        env_nh3_label: "Niveau NH3",
+        section_chamber_sensor: "Capteurs d'Élevage",
+        section_larvae_analysis: "Santé des Larves",
+        section_system_status: "État du Système",
+        status_tilt: "Inclinaison",
+        status_rollmotor: "Moteur",
+        status_cboardpd: "Charge Carte",
+        status_fanin: "Ventilo Entrée",
+        status_fanout: "Ventilo Sortie",
+        status_axis: "Axe de Charge",
+        status_power: "Consommation",
+        status_signal: "Signal",
+        section_analysis: "Analyse de Réduction",
+        analysis_latest_weight: "Dernier Poids : ",
+        analysis_total_reduction: "Réduction Totale (7j) : ",
+        chart_weight_trend: "Tendance Poids Cuve",
+        chart_carbon_reduction: "Réduction Carbone Journalière (7j)",
+        btn_7d: "7 Jours",
+        btn_15d: "15 Jours",
+        btn_30d: "30 Jours",
+        section_device_history_title: "Journal de Fonctionnement",
+        status_online_short: "Normal",
+        status_caution_short: "Attention",
+        status_offline_short: "Arrêt"
+      }
+    };
+
+    function switchDevice(deviceId) {
+      currentDevice = deviceId;
+      document.getElementById('device-selector').value = deviceId;
+      const data = deviceDatabase[deviceId];
+      if (!data) return;
+
+      document.getElementById('last-update-time').innerText = data.updateTime;
+
+      if (leafletMap && mapMarker) {
+        leafletMap.setView(data.coords, 13);
+        mapMarker.setLatLng(data.coords);
+        document.getElementById('map-link').href = `https://www.google.com/maps?q=${data.coords[0]},${data.coords[1]}`;
+      }
+      document.getElementById('map-coords-text').innerText = formatCoords(data.coords[0], data.coords[1]);
+
+      document.getElementById('hero-daily-carbon').innerText = data.dailyCarbon;
+      document.getElementById('hero-monthly-carbon').innerText = data.monthlyCarbon;
+      document.getElementById('hero-monthly-organic').innerText = data.monthlyOrganic;
+
+      document.getElementById('val-weight1').innerHTML = `${data.weight1} <small class="text-base font-normal font-sans text-slate-400">Kg</small>`;
+      document.getElementById('val-weight2').innerHTML = `${data.weight2} <small class="text-base font-normal font-sans text-slate-400">Kg</small>`;
+
+      document.getElementById('val-env-temp').innerHTML = `${data.envTemp} <small class="text-base font-normal font-sans text-slate-500">°C</small>`;
+      document.getElementById('val-env-humidity').innerHTML = `${data.envHumidity} <small class="text-base font-normal font-sans text-slate-500">%</small>`;
+      document.getElementById('val-co2').innerHTML = `${data.co2} <small class="text-base font-normal font-sans text-slate-500">ppm</small>`;
+      document.getElementById('val-nh3').innerHTML = `${data.nh3} <small class="text-base font-normal font-sans text-slate-500">ppm</small>`;
+
+      document.getElementById('val-chamber-temp').innerHTML = `${data.chamberTemp} <small class="text-base font-normal font-sans text-slate-500">°C</small>`;
+      document.getElementById('val-chamber-humidity').innerHTML = `${data.chamberHumidity} <small class="text-base font-normal font-sans text-slate-500">%</small>`;
+
+      renderLarvaeAnalysis(data);
+      renderSystemStatus(data);
+
+      document.getElementById('val-latest-weight').innerText = `${data.weight1 !== '--' ? data.weight1 : '0.00'} kg`;
+      document.getElementById('val-total-reduction').innerText = '364.38 kg';
+
+      renderDeviceHistorySection(data, deviceId);
+
+      const quickBadge = document.getElementById('quick-status-badge');
+      const quickText = document.getElementById('quick-status-text');
+      if (data.state === 'normal') {
+        quickBadge.className = "px-3.5 py-1 rounded-full text-base font-extrabold bg-emerald-100 text-emerald-800 flex items-center gap-2 shadow-sm";
+        quickBadge.children[0].className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+        quickText.innerText = i18n[currentLang].status_online_short;
+      } else if (data.state === 'caution') {
+        quickBadge.className = "px-3.5 py-1 rounded-full text-base font-extrabold bg-amber-100 text-amber-800 flex items-center gap-2 shadow-sm";
+        quickBadge.children[0].className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
+        quickText.innerText = i18n[currentLang].status_caution_short;
+      } else {
+        quickBadge.className = "px-3.5 py-1 rounded-full text-base font-extrabold bg-rose-100 text-rose-800 flex items-center gap-2 shadow-sm";
+        quickBadge.children[0].className = "w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse";
+        quickText.innerText = i18n[currentLang].status_offline_short;
+      }
+
+      updateCharts(data);
+    }
+
+    function renderLarvaeAnalysis(data) {
+      const badge = document.getElementById('larvae-health-badge');
+      const badgeText = document.getElementById('larvae-health-badge-text');
+
+      if (data.larvaeOverall === 'healthy') {
+        badge.className = "px-4 py-1.5 rounded-full text-base font-extrabold flex items-center gap-2 shadow-sm badge-hero-gradient";
+        badge.children[0].className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
+        badgeText.innerText = "健康";
+      } else {
+        badge.className = "px-4 py-1.5 rounded-full text-base font-extrabold flex items-center gap-2 shadow-sm bg-amber-500 text-white border border-amber-400";
+        badge.children[0].className = "w-2.5 h-2.5 rounded-full bg-white animate-ping";
+        badgeText.innerText = "注意";
+      }
+
+      renderStatusTag('larvae-stat-temp', data.larvaeTemp);
+      renderStatusTag('larvae-stat-humidity', data.larvaeHumidity);
+      renderStatusTag('larvae-stat-co2', data.larvaeCo2);
+      renderStatusTag('larvae-stat-nh3', data.larvaeNh3);
+    }
+
+    function renderStatusTag(elementId, statusText) {
+      const el = document.getElementById(elementId);
+      el.innerText = statusText;
+      if (statusText === '正常') {
+        el.className = "text-metric-value text-[#052F5F]";
+      } else {
+        el.className = "text-metric-value text-amber-600";
+      }
+    }
+
+    function renderSystemStatus(data) {
+      const tiltBadge = document.getElementById('sys-tilt-badge');
+      tiltBadge.innerText = data.tilt;
+      if (data.tilt === '無') {
+        tiltBadge.className = "font-bold text-[#052F5F] text-base";
+      } else {
+        tiltBadge.className = "px-3 py-1 rounded-lg text-sm font-extrabold bg-amber-100 text-amber-800 border border-amber-300";
+      }
+
+      document.getElementById('val-rollmotor').innerText = data.rollmotor;
+      document.getElementById('val-cboardpd').innerText = data.cboardpd;
+      document.getElementById('val-fanin').innerText = data.fanin;
+      document.getElementById('val-fanout').innerText = data.fanout;
+      document.getElementById('val-axis').innerText = data.axis;
+      document.getElementById('val-power').innerText = data.power;
+
+      const sigBadge = document.getElementById('sys-signal-badge');
+      sigBadge.innerText = data.signal;
+      if (data.signal === '正常') {
+        sigBadge.className = "font-bold text-[#052F5F] text-base";
+      } else if (data.signal === '弱') {
+        sigBadge.className = "px-3 py-1 rounded-lg text-sm font-extrabold bg-amber-100 text-amber-800 border border-amber-300";
+      } else {
+        sigBadge.className = "px-3 py-1 rounded-lg text-sm font-extrabold bg-rose-100 text-rose-800 border border-rose-300";
+      }
+    }
+
+    function renderDeviceHistorySection(data, deviceId) {
+      const badge = document.getElementById('health-badge');
+      document.getElementById('health-device-id-text').innerText = deviceId;
+
+      if (data.state === 'normal') {
+        badge.className = "px-4 py-1 rounded-full text-sm font-black bg-emerald-500 text-white shadow-sm";
+        badge.innerText = "正常";
+      } else if (data.state === 'caution') {
+        badge.className = "px-4 py-1 rounded-full text-sm font-black bg-amber-500 text-white shadow-sm";
+        badge.innerText = "注意";
+      } else {
+        badge.className = "px-4 py-1 rounded-full text-sm font-black bg-rose-600 text-white shadow-sm";
+        badge.innerText = "停機";
+      }
+
+      const histContainer = document.getElementById('device-history-container');
+      histContainer.innerHTML = '';
+      data.history.forEach(item => {
+        const row = document.createElement('div');
+        row.className = "flex justify-between items-center bg-white/10 px-4 py-2.5 rounded-xl hover:bg-white/20 transition border border-white/10 shadow-sm";
+        
+        let statusBadgeHtml = '';
+        if (item.state === 'normal') {
+          statusBadgeHtml = `<span class="px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-white flex items-center gap-1.5 shadow"><span class="w-2 h-2 rounded-full bg-white"></span> 正常</span>`;
+        } else if (item.state === 'caution') {
+          statusBadgeHtml = `<span class="px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white flex items-center gap-1.5 shadow"><span class="w-2 h-2 rounded-full bg-white animate-ping"></span> 注意</span>`;
+        } else {
+          statusBadgeHtml = `<span class="px-3 py-1 rounded-full text-xs font-black bg-rose-600 text-white flex items-center gap-1.5 shadow"><span class="w-2 h-2 rounded-full bg-white"></span> 停機</span>`;
+        }
+
+        row.innerHTML = `
+          <span class="text-white font-mono font-bold flex items-center gap-2.5 text-sm">
+            <i class="fa-regular fa-clock text-emerald-400"></i> ${item.time}
+          </span>
+          ${statusBadgeHtml}
+        `;
+        histContainer.appendChild(row);
+      });
+    }
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang] && i18n[lang][key]) {
+          el.innerHTML = i18n[lang][key];
+        }
+      });
+      switchDevice(currentDevice);
+    }
+
+    function refreshCurrentDevice() {
+      switchDevice(currentDevice);
+    }
+
+    function updateCharts(data) {
+      if (chartWeightInstance) {
+        chartWeightInstance.data.datasets[0].data = data.weightChartData;
+        chartWeightInstance.update();
+      }
+      if (chartCarbonInstance) {
+        chartCarbonInstance.data.datasets[0].data = data.carbonChartData;
+        chartCarbonInstance.update();
+      }
+    }
+
+    // 地圖初始化
+    const initialCoords = deviceDatabase['FoodWasteDecomposer000006'].coords;
+    leafletMap = L.map('map', { zoomControl: false, attributionControl: false }).setView(initialCoords, 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(leafletMap);
+    mapMarker = L.marker(initialCoords).addTo(leafletMap);
+
+    // 折線圖 1
+    chartWeightInstance = new Chart(document.getElementById('chartWeight').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: ['08/07', '08/08', '08/09', '08/10', '08/11', '08/12', '08/13'],
+        datasets: [{
+          data: deviceDatabase['FoodWasteDecomposer000006'].weightChartData,
+          borderColor: '#5893AD',
+          borderWidth: 3,
+          tension: 0.3,
+          fill: true,
+          backgroundColor: 'rgba(88, 147, 173, 0.15)'
+        }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 12, weight: 'bold' } } },
+          y: { grid: { color: 'rgba(0,0,0,0.03)' }, min: 0, max: 40, ticks: { font: { size: 12, weight: 'bold' } } }
+        }
+      }
+    });
+
+    // 折線圖 2
+    chartCarbonInstance = new Chart(document.getElementById('chartCarbon').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: ['08/07', '08/08', '08/09', '08/10', '08/11', '08/12', '08/13'],
+        datasets: [{
+          data: deviceDatabase['FoodWasteDecomposer000006'].carbonChartData,
+          borderColor: '#10B981',
+          borderWidth: 3,
+          tension: 0.3,
+          fill: true,
+          backgroundColor: (context) => {
+            const ctx = context.chart.ctx;
+            const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            return gradient;
+          }
+        }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 12, weight: 'bold' } } },
+          y: { grid: { color: 'rgba(0,0,0,0.03)' }, min: 0, max: 200, ticks: { font: { size: 12, weight: 'bold' } } }
+        }
+      }
+    });
+
+    // ==========================================
+    // RAW 資料分頁與匯出 (CSV / XLSX) 邏輯
+    // ==========================================
+    let rawCurrentDevice = 'FoodWasteDecomposer000006';
+    let rawCurrentPage = 1;
+    let rawPageSize = 5;
+
+    // RAW 資料庫
+    const rawMockDatabase = {
+      'FoodWasteDecomposer000003': [
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000003", sensorType: "power", value: "OFF", time: "2026-08-13T13:30:12+00:00", displayTime: "2026/8/13 15:30:12 (GMT+2)" },
+        { msgID: "HIST_001", devID: "FoodWasteDecomposer000003", sensorType: "weight2", value: 14.9, time: "2026-08-13T13:00:00+00:00", displayTime: "2026/8/13 15:00:00 (GMT+2)" },
+        { msgID: "HIST_002", devID: "FoodWasteDecomposer000003", sensorType: "temp", value: 24.0, time: "2026-08-13T12:00:00+00:00", displayTime: "2026/8/13 14:00:00 (GMT+2)" }
+      ],
+      'FoodWasteDecomposer000006': [
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000006", sensorType: "weight2", value: 28.6, time: "2026-08-13T13:00:16+00:00", displayTime: "2026/8/13 21:00:16 (GMT+8)" },
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000006", sensorType: "weight1", value: 0.0, time: "2026-08-13T13:00:16+00:00", displayTime: "2026/8/13 21:00:16 (GMT+8)" },
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000006", sensorType: "rssi", value: -51, time: "2026-08-13T13:00:16+00:00", displayTime: "2026/8/13 21:00:16 (GMT+8)" },
+        { msgID: "HIST_001", devID: "FoodWasteDecomposer000006", sensorType: "temp", value: 32.0, time: "2026-08-13T12:00:00+00:00", displayTime: "2026/8/13 20:00:00 (GMT+8)" },
+        { msgID: "HIST_002", devID: "FoodWasteDecomposer000006", sensorType: "humidity", value: 68.0, time: "2026-08-13T12:00:00+00:00", displayTime: "2026/8/13 20:00:00 (GMT+8)" },
+        { msgID: "HIST_003", devID: "FoodWasteDecomposer000006", sensorType: "co2", value: 633, time: "2026-08-13T11:00:00+00:00", displayTime: "2026/8/13 19:00:00 (GMT+8)" },
+        { msgID: "HIST_004", devID: "FoodWasteDecomposer000006", sensorType: "nh3", value: 15, time: "2026-08-13T11:00:00+00:00", displayTime: "2026/8/13 19:00:00 (GMT+8)" },
+        { msgID: "HIST_005", devID: "FoodWasteDecomposer000006", sensorType: "fanin", value: 478, time: "2026-08-13T10:00:00+00:00", displayTime: "2026/8/13 18:00:00 (GMT+8)" }
+      ],
+      'FoodWasteDecomposer000007': [
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000007", sensorType: "humidity", value: 82.0, time: "2026-08-13T13:01:45+00:00", displayTime: "2026/8/13 21:01:45 (GMT+8)" },
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000007", sensorType: "temp", value: 33.0, time: "2026-08-13T13:01:45+00:00", displayTime: "2026/8/13 21:01:45 (GMT+8)" },
+        { msgID: "HIST_001", devID: "FoodWasteDecomposer000007", sensorType: "weight2", value: 31.2, time: "2026-08-13T12:00:00+00:00", displayTime: "2026/8/13 20:00:00 (GMT+8)" },
+        { msgID: "HIST_002", devID: "FoodWasteDecomposer000007", sensorType: "co2", value: 790, time: "2026-08-13T11:00:00+00:00", displayTime: "2026/8/13 19:00:00 (GMT+8)" }
+      ],
+      'FoodWasteDecomposer000008': [
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000008", sensorType: "temp", value: 38.0, time: "2026-08-13T13:02:50+00:00", displayTime: "2026/8/13 21:02:50 (GMT+8)" },
+        { msgID: "LATEST", devID: "FoodWasteDecomposer000008", sensorType: "fanin", value: 120, time: "2026-08-13T13:02:50+00:00", displayTime: "2026/8/13 21:02:50 (GMT+8)" },
+        { msgID: "HIST_001", devID: "FoodWasteDecomposer000008", sensorType: "tilt", value: "YES", time: "2026-08-13T12:00:00+00:00", displayTime: "2026/8/13 20:00:00 (GMT+8)" },
+        { msgID: "HIST_002", devID: "FoodWasteDecomposer000008", sensorType: "weight2", value: 34.8, time: "2026-08-13T11:00:00+00:00", displayTime: "2026/8/13 19:00:00 (GMT+8)" }
+      ]
+    };
+
+    function switchRawDevice(devId) {
+      rawCurrentDevice = devId;
+      rawCurrentPage = 1;
+      renderRawDataTab();
+    }
+
+    function changeRawPageSize(size) {
+      rawPageSize = parseInt(size, 10);
+      rawCurrentPage = 1;
+      renderRawDataTab();
+    }
+
+    function prevRawPage() {
+      if (rawCurrentPage > 1) {
+        rawCurrentPage--;
+        renderRawDataTab();
+      }
+    }
+
+    function nextRawPage() {
+      const dataList = rawMockDatabase[rawCurrentDevice] || [];
+      const totalPages = Math.ceil(dataList.length / rawPageSize) || 1;
+      if (rawCurrentPage < totalPages) {
+        rawCurrentPage++;
+        renderRawDataTab();
+      }
+    }
+
+    function goToRawPage(page) {
+      rawCurrentPage = page;
+      renderRawDataTab();
+    }
+
+    // 匯出 CSV 或 XLSX 功能
+    function exportRawData(format) {
+      const dataList = rawMockDatabase[rawCurrentDevice] || [];
+      if (dataList.length === 0) {
+        alert('目前無可匯出的資料！');
+        return;
+      }
+
+      const exportRows = dataList.map(item => ({
+        "Message_ID": item.msgID,
+        "Device_ID": item.devID,
+        "Sensor_Type": item.sensorType,
+        "Value": item.value,
+        "ISO_Time": item.time,
+        "Local_Time": item.displayTime
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "RawData");
+
+      const fileName = `${rawCurrentDevice}_raw_data_${new Date().toISOString().slice(0, 10)}.${format}`;
+
+      if (format === 'csv') {
+        XLSX.writeFile(workbook, fileName, { bookType: 'csv' });
+      } else {
+        XLSX.writeFile(workbook, fileName, { bookType: 'xlsx' });
+      }
+
+      document.getElementById('export-dropdown-menu').classList.add('hidden');
+    }
+
+    function renderRawDataTab() {
+      const dataList = rawMockDatabase[rawCurrentDevice] || [];
+      const total = dataList.length;
+      const totalPages = Math.ceil(total / rawPageSize) || 1;
+
+      document.getElementById('raw-total-count').innerText = total;
+
+      const startIndex = (rawCurrentPage - 1) * rawPageSize;
+      const endIndex = Math.min(startIndex + rawPageSize, total);
+      const pageData = dataList.slice(startIndex, endIndex);
+
+      document.getElementById('raw-page-range-info').innerText = total > 0 ? `顯示第 ${startIndex + 1} - ${endIndex} 筆 (共 ${total} 筆)` : '無資料';
+
+      const container = document.getElementById('raw-data-card-list');
+      container.innerHTML = '';
+
+      if (pageData.length === 0) {
+        container.innerHTML = '<div class="clean-card p-8 text-center text-slate-400 font-bold">目前無此設備的 RAW 資料</div>';
+      } else {
+        pageData.forEach(item => {
+          const { displayTime, ...jsonObj } = item;
+          const card = document.createElement('div');
+          card.className = "clean-card overflow-hidden shadow-sm";
+          card.innerHTML = `
+            <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs">
+              <span class="px-2.5 py-1 rounded-md font-bold font-mono bg-blue-100 text-blue-700">Msg ID: ${item.msgID}</span>
+              <span class="font-mono text-slate-400 flex items-center gap-1.5"><i class="fa-regular fa-clock"></i> ${item.displayTime}</span>
+            </div>
+            <div class="p-5 bg-slate-900 overflow-x-auto">
+              <pre class="font-mono text-xs text-sky-400 leading-relaxed m-0">${JSON.stringify(jsonObj, null, 2)}</pre>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      const numContainer = document.getElementById('raw-pagination-numbers');
+      numContainer.innerHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        btn.onclick = () => goToRawPage(i);
+        if (i === rawCurrentPage) {
+          btn.className = "w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold font-mono text-xs shadow-sm";
+        } else {
+          btn.className = "w-8 h-8 rounded-lg border border-slate-300 bg-white text-slate-700 font-bold font-mono text-xs hover:bg-slate-100 transition";
+        }
+        numContainer.appendChild(btn);
+      }
+
+      document.getElementById('raw-prev-btn').disabled = rawCurrentPage === 1;
+      document.getElementById('raw-next-btn').disabled = rawCurrentPage === totalPages || total === 0;
+    }
+
+    // 初始載入
+    switchDevice('FoodWasteDecomposer000006');
+  </script>
+</body>
+</html>
