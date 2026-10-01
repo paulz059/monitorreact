@@ -26,6 +26,18 @@ import bsflIcon from "icon/open-box.png";
 
 const UNKNOWN_LAST_UPDATED = "__unknown__";
 
+// 將 GPS 字串解析成 "lat,lng"。部分裝置會回傳多於兩組數字
+// (例如 "25.04509,121.5147415.000,25.04487")，只取前兩組；無效時回傳 null
+function parseGps(raw) {
+  if (raw === null || raw === undefined) return null;
+  const [latStr, lngStr] = String(raw).split(",");
+  const lat = parseFloat(latStr);
+  const lng = parseFloat(lngStr);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return `${lat},${lng}`;
+}
+
 // 5. 主儀表板畫面
 function MonitorDashboard() {
   const { t } = useLanguage();
@@ -265,6 +277,7 @@ function MonitorDashboard() {
   }, [fetchData]);
 
   const selectedDeviceData = devices.find(d => d.devID === selectedDevID);
+  const gpsLocation = parseGps(selectedDeviceData?.sensors.GPS);
 
   const wasteDisposedWindows = useMemo(() => {
     const now = new Date();
@@ -368,16 +381,16 @@ function MonitorDashboard() {
                   {selectedDeviceData && (
                     <p className="mb-0 text-muted">{t('monitorDashboard.lastSeen')}: {new Date(selectedDeviceData.lastTime).toLocaleString()}</p>
                   )}
-                  {selectedDeviceData && selectedDeviceData.sensors.GPS && (
+                  {gpsLocation && (
                     <p className="mb-0 text-dark">
-                      {t('monitorDashboard.gpsLocation')}: {selectedDeviceData.sensors.GPS}
+                      {t('monitorDashboard.gpsLocation')}: {gpsLocation}
                     </p>
                   )}
                 </Col>
-                {selectedDeviceData && selectedDeviceData.sensors.GPS && (
+                {gpsLocation && (
                   <Col md="8">
                     <a
-                      href={`https://www.google.com/maps?q=${encodeURIComponent(selectedDeviceData.sensors.GPS)}`}
+                      href={`https://www.google.com/maps?q=${encodeURIComponent(gpsLocation)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       title={t('monitorDashboard.viewOnGoogleMaps')}
@@ -390,7 +403,7 @@ function MonitorDashboard() {
                         height="160"
                         style={{ border: 0, display: "block", pointerEvents: "none" }}
                         loading="lazy"
-                        src={`https://www.google.com/maps?q=${encodeURIComponent(selectedDeviceData.sensors.GPS)}&output=embed`}
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(gpsLocation)}&output=embed`}
                       />
                     </a>
                   </Col>
