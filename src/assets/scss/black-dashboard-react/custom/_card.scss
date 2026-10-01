@@ -222,20 +222,30 @@
   width: 36px;
   height: 36px;
   line-height: 36px;
-  border-radius: 50%;
   display: inline-block;
 
   i{
-    color: $white;
     line-height: 36px;
   }
 
-  &.icon-primary{
-    background-color: $primary;
+  &.icon-primary i{
+    color: $primary;
   }
 
-  &.icon-info{
-    background-color: $info;
+  &.icon-info i{
+    color: $info;
+  }
+
+  &.icon-danger i{
+    color: $danger;
+  }
+
+  &.icon-success i{
+    color: $success;
+  }
+
+  &.icon-warning i{
+    color: $warning;
   }
 }
 
