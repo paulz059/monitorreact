@@ -38,6 +38,33 @@ function parseGps(raw) {
   return `${lat},${lng}`;
 }
 
+// weight1 由 weight2 推算：裝置每 30 分鐘上報一次 weight2，
+// 本次 weight2 減上一筆 weight2，增量 > 0.2 才視為投入量，否則為 0。
+// 兩筆間隔超過容許值 (斷線) 時該筆記 0。
+const WEIGHT1_MIN_INCREMENT = 0.2;
+const WEIGHT2_MAX_GAP_MS = 45 * 60 * 1000;
+
+function deriveWeight1FromWeight2(weight2History) {
+  const points = (weight2History || [])
+    .map(item => ({ timestamp: item.timestamp, value: parseFloat(item.value), time: new Date(item.timestamp).getTime() }))
+    .filter(p => p.timestamp && Number.isFinite(p.value) && Number.isFinite(p.time))
+    .sort((a, b) => a.time - b.time);
+
+  const result = [];
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const delta = curr.value - prev.value;
+    const connected = curr.time - prev.time <= WEIGHT2_MAX_GAP_MS;
+    result.push({
+      sensorType: "weight1",
+      timestamp: curr.timestamp,
+      value: connected && delta > WEIGHT1_MIN_INCREMENT ? delta : 0
+    });
+  }
+  return result;
+}
+
 // 5. 主儀表板畫面
 function MonitorDashboard() {
   const { t } = useLanguage();
@@ -116,29 +143,21 @@ function MonitorDashboard() {
     loadMainHistory();
   }, [weightTrendDays, selectedDevID, fetchSensorHistory]);
 
-  // 今日與週加總資料抓取 (weight1 & weight2)
+  // 週加總與 WASTE DISPOSED 共用一次 weight2 查詢 (weight1 由 weight2 推算)
+  // 天數取 max(8, 本月1號至今+1)：多抓 1 天讓第一筆也有前一筆可相減
   useEffect(() => {
-    const loadWeightSums = async () => {
-      if (!selectedDevID) return;
-      // 改為抓取 7 天以支援週圖表
-      const w1 = await fetchSensorHistory('weight1', '7');
-      setWeight1History(w1);
-    };
-    loadWeightSums();
-  }, [selectedDevID, fetchSensorHistory]);
-
-  // WASTE DISPOSED 三時間窗資料抓取 (weight1，本月1號至今+1天緩衝)
-  useEffect(() => {
-    const loadWasteWindows = async () => {
+    const loadWeight1 = async () => {
       if (!selectedDevID) return;
       setLoadingWasteWindows(true);
-      const now = new Date();
-      const daysSinceMonthStart = now.getDate();
-      const data = await fetchSensorHistory('weight1', (daysSinceMonthStart + 1).toString());
-      setWeight1MonthHistory(data);
+      const days = Math.max(8, new Date().getDate() + 1);
+      const w2 = await fetchSensorHistory('weight2', days.toString());
+      const w1 = deriveWeight1FromWeight2(w2);
+      const weekFirstDateStr = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      setWeight1History(w1.filter(item => item.timestamp.split('T')[0] >= weekFirstDateStr));
+      setWeight1MonthHistory(w1);
       setLoadingWasteWindows(false);
     };
-    loadWasteWindows();
+    loadWeight1();
   }, [selectedDevID, fetchSensorHistory]);
 
   // Weight parameters are now retrieved from the latest device sensor reading directly
